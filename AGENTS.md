@@ -1,0 +1,19 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+Keep runtime logic in `src/` (e.g., `src/DnsPropagator`). Arrange HTTP or scheduling helpers under `src/<Project>/Services` and Pi-hole API clients in `src/<Project>/Clients`. Place integration glue (Dockerfile, compose samples, helm charts) under `deploy/`. Tests stay in `tests/`, mirroring namespaces from `src`. Put shared configuration samples or schema docs in `docs/` when they grow beyond inline README notes.
+
+## Build, Test, and Development Commands
+`dotnet restore` installs NuGet packages—run after cloning or altering dependencies. `dotnet build` compiles the solution and validates analyzers. Use `dotnet test --collect:"XPlat Code Coverage"` for the primary pipeline run; it produces coverage data in `TestResults/`. For container validation, run `docker build -t ghcr.io/<org>/pihole-dnspropagate .` from the repository root, followed by `docker run --env-file env.sample ghcr.io/<org>/pihole-dnspropagate`.
+
+## Coding Style & Naming Conventions
+Target .NET 9 and enable nullable reference types. Use four-space indentation, PascalCase for classes, camelCase for locals, and ALL_CAPS for environment variable constants. Keep each project with its own `Directory.Build.props` for analyzer configuration. Run `dotnet format` before opening a PR; the command enforces `csharp_style` rules and removes unused imports. Favor async APIs when interacting with the Pi-hole endpoints and wrap external calls in `IPiholeClient` abstractions for testing.
+
+## Testing Guidelines
+Adopt xUnit with FluentAssertions. Name test projects `<ProjectName>.Tests` and test files after the class under test (e.g., `DnsSyncServiceTests.cs`). Cover every public service and client method with at least one happy-path and one failure-path test; critical sync logic should reach 80% branch coverage. Exercise API integrations via test doubles that mimic Pi-hole responses; place reusable fixtures in `tests/Common`.
+
+## Commit & Pull Request Guidelines
+Write commits using the template `type(scope): summary`, followed by `Changes:` and `Validation:` sections listing granular edits and commands run. Acceptable types: `feat`, `fix`, `chore`, `docs`, `test`, `build`, `refactor`, `perf`, `ci`, `revert`. Keep summaries ≤72 characters, imperative, and scope optional but descriptive (`sync`, `teleporter-client`). Reference related issues in the `Refs:` line (`Refs #12`) when applicable. PRs need a concise summary, validation evidence (command output or screenshots for tooling), and a checklist for secrets: confirm API keys are mocked and configs exclude real tokens. Request review from @maintainers once CI is green and tag new configuration knobs in the release notes draft.
+
+## Security & Configuration Tips
+Never commit real Pi-hole API keys; provide masked examples in `.env.example`. When introducing new configuration, document defaults in `docs/configuration.md` and ensure the Docker image reads settings via environment variables only.
