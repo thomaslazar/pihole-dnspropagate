@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <Deterministic>true</Deterministic>
+    <Company>Thomas Lazar</Company>
+    <Authors>Thomas Lazar</Authors>
+    <Product>pihole-dnspropagate</Product>
+    <Description>Synchronize Pi-hole local DNS and CNAME records across instances.</Description>
+    <Version>0.1.0</Version>
+    <FileVersion>0.1.0.0</FileVersion>
+    <InformationalVersion>0.1.0-alpha</InformationalVersion>
+    <PackageProjectUrl>https://github.com/thomaslazar/pihole-dnspropagate</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/thomaslazar/pihole-dnspropagate</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(IsTestProject)=='true'">
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>
