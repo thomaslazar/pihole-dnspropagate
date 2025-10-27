@@ -15,3 +15,6 @@ args = ["mcp"]
 
 [projects."/workspaces/pihole-dnspropagate"]
 trust_level = "trusted"
+
+[notice]
+hide_full_access_warning = true

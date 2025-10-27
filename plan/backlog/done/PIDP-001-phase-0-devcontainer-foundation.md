@@ -2,7 +2,7 @@
 - Type: Task
 - Phase: 0
 - Prerequisites: None
-- Status: Planned
+- Status: Completed
 
 ## Context
 We need a reproducible VS Code devcontainer that ships with .NET 9 tooling, Codex CLI, GitKraken CLI, Docker utilities, and the mandated extension set so contributors can work without host setup. This also ensures CODEX_HOME and config scaffolding exist from the start.
