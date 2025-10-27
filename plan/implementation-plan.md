@@ -39,6 +39,7 @@
 - **Flurl.Http** – fluent HTTP client that simplifies authenticated requests and file uploads/downloading without manual `HttpClient` plumbing.
 - **Polly** – resilience and transient-fault handling (retries, circuit breakers) for Pi-hole API calls via `IHttpClientFactory`.
 - **SharpCompress** – supports reading/writing ZIP/TAR archives used by Pi-hole Teleporter exports without manual stream handling.
+- **Tomlyn** – .NET TOML parser/serializer for reading and updating `pihole.toml` host and CNAME records.
 - **Cronos** – lightweight cron expression evaluator to drive interval scheduling without Quartz overhead.
 - **Spectre.Console.Cli** – structured CLI command handling to expose a `sync-now` command with rich help text when running in containers.
 - **Serilog + Serilog.Sinks.Console** – structured logging pipeline offering JSON or ANSI output suitable for container logs and future sink extensions.
@@ -57,10 +58,11 @@
 - Write unit tests using mocked handlers to cover success, failure, re-auth, and retry scenarios.
 
 ## Phase 3 – Teleporter Processing
-- Decode Teleporter archive (`.tar.gz`) using SharpCompress. Extract `custom.list` (Local DNS) and `cname.list` (CNAME) files.
-- Build serializer/deserializer that overwrites these files with primary content while preserving other assets (gravity database, settings).
-- Normalize line endings and encoding (UTF-8) to avoid inconsistent diffs across platforms.
-- Provide fixture builders that generate Teleporter archives for unit tests without requiring Pi-hole containers.
+- Decode Teleporter archive (zip) using SharpCompress. Extract `pihole/pihole.toml` while leaving other files untouched.
+- Parse `pihole.toml` with Tomlyn to read `[dns].hosts` and `cnameRecords` arrays representing Local DNS and CNAME entries.
+- Replace secondary `[dns].hosts` and `cnameRecords` arrays with primary data while preserving unrelated sections and formatting, leaving all other files as-is.
+- Normalize line endings and encoding (UTF-8) to avoid inconsistent diffs across platforms; keep original TOML ordering when possible.
+- Provide fixture builders that generate Teleporter zips with representative `pihole.toml` content for unit tests without requiring Pi-hole containers and validate structure parity.
 
 ## Phase 4 – Sync Orchestrator
 - Implement `SyncCoordinator` that:

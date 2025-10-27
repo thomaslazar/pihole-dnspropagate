@@ -26,7 +26,7 @@ Home lab and small-office operators often run multiple Pi-hole nodes for redunda
 - Offer a manual trigger command accessible through the container (e.g., `dotnet run -- sync-now`) to force a sync outside the scheduler.
 - Perform Pi-hole auth handshake per official docs: submit hashed password to establish a session cookie and CSRF token before calling Teleporter.
 - Fetch the Teleporter export from the primary Pi-hole `/teleporter` endpoint once authenticated.
-- Parse Teleporter payload to isolate Local DNS and CNAME configuration.
+- Parse Teleporter zip payload to extract `pihole/pihole.toml` and the `[dns].hosts` and `cnameRecords` arrays containing Local DNS and CNAME configuration.
 - Fetch Teleporter data from each secondary Pi-hole, replace their Local DNS and CNAME sections with the primary data, and post the modified archive back to `/teleporter`.
 - Execute sync on startup and thereafter on a configurable fixed interval (default 5 minutes).
 - Provide idempotent behavior: re-running when records already match should result in no changes beyond verification.

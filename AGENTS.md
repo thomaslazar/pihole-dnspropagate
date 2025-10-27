@@ -15,5 +15,8 @@ Adopt xUnit with FluentAssertions. Name test projects `<ProjectName>.Tests` and 
 ## Commit & Pull Request Guidelines
 Write commits using the template `type(scope): summary`, followed by `Changes:` and `Validation:` sections listing granular edits and commands run. Acceptable types: `feat`, `fix`, `chore`, `docs`, `test`, `build`, `refactor`, `perf`, `ci`, `revert`. Keep summaries ≤72 characters, imperative, and scope optional but descriptive (`sync`, `teleporter-client`). Reference related issues in the `Refs:` line (`Refs #12`) when applicable. PRs need a concise summary, validation evidence (command output or screenshots for tooling), and a checklist for secrets: confirm API keys are mocked and configs exclude real tokens. Request review from @maintainers once CI is green and tag new configuration knobs in the release notes draft.
 
+## Backlog Item Standards
+Create backlog entries in `/plan/backlog/` using the template defined in `plan/backlog/template.md`. File names must follow `PIDP-{NNN}-phase-{P}-{kebab-summary}.md` with zero-padded global sequence numbers. Each file must declare prerequisites (if any) in the header, ensuring dependencies are explicit. Populate sections (Context, Work Items, Acceptance Criteria, Notes) exactly as outlined in the template and keep `Status: Planned` until completion. When an item is done, update its status to `Completed` and move the file into `/plan/backlog/done/`.
+
 ## Security & Configuration Tips
 Never commit real Pi-hole API keys; provide masked examples in `.env.example`. When introducing new configuration, document defaults in `docs/configuration.md` and ensure the Docker image reads settings via environment variables only.
