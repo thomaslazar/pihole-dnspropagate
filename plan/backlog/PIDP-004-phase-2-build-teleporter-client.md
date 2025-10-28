@@ -1,8 +1,8 @@
 # Build Teleporter Client
 - Type: Story
 - Phase: 2
-- Prerequisites: PIDP-003
-- Status: Completed
+- Prerequisites: PIDP-003, PIDP-010
+- Status: Planned
 
 ## Context
 The service needs a resilient HTTP layer to authenticate with Pi-hole via the `/api/auth` endpoint by POSTing JSON `{ "password": "..." }`, manage returned session metadata (SID, CSRF token, validity window, TOTP flag), and interact with the `/api/teleporter` download/upload endpoints using Flurl.Http and Polly. Subsequent requests should prefer the `X-FTL-SID` header for authentication (avoiding cookies unless required) and include the CSRF token when demanded by the API.

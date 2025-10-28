@@ -1,6 +1,9 @@
 {
 	"name": "C# (.NET)",
-	"image": "mcr.microsoft.com/devcontainers/dotnet:1-9.0-bookworm",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
 	"features": {
 		"ghcr.io/devcontainers/features/dotnet:2": {
 			"version": "9.0"
@@ -14,7 +17,9 @@
 		"--init",
 		"--privileged",
 		"-v",
-		"/var/run/docker.sock:/var/run/docker.sock"
+		"/var/run/docker.sock:/var/run/docker.sock",
+		"--security-opt",
+		"no-new-privileges=false"
 	],
 	"customizations": {
 		"vscode": {
@@ -42,8 +47,7 @@
 		}
 	},
 	"postCreateCommand": [
-		"/bin/bash",
-		"-c",
-		"set -euo pipefail; sudo apt-get update; sudo apt-get install -y curl ca-certificates jq nodejs npm; curl -fsSL -o /tmp/gk.deb https://github.com/gitkraken/gk-cli/releases/download/v3.1.40/gk_3.1.40_linux_amd64.deb; sudo apt-get install -y /tmp/gk.deb; rm /tmp/gk.deb; command -v codex >/dev/null 2>&1 || sudo npm install -g @openai/codex; dotnet --info"
+		"dotnet",
+		"--info"
 	]
 }
