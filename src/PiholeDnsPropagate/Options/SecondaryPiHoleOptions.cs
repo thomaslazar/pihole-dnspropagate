@@ -13,5 +13,4 @@ public sealed class SecondaryPiHoleNodeOptions
     public string Name { get; set; } = string.Empty;
     public Uri? BaseUrl { get; set; }
     public string Password { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
 }

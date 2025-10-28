@@ -6,8 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using PiholeDnsPropagate.Options;
-using PiholeDnsPropagate.Security;
 using PiholeDnsPropagate.Validation;
+using PiholeDnsPropagate.Teleporter;
+using PiholeDnsPropagate.Teleporter.Authentication;
 
 namespace PiholeDnsPropagate.Extensions;
 
@@ -20,7 +21,6 @@ public static class ServiceCollectionExtensions
             .PostConfigure(options =>
             {
                 ValidateOptions(options, new PrimaryPiHoleOptionsValidator(), nameof(PrimaryPiHoleOptions));
-                options.PasswordHash = PasswordHasher.ComputeSha256(options.Password);
             });
 
         services.AddOptions<SecondaryPiHoleOptions>()
@@ -28,10 +28,6 @@ public static class ServiceCollectionExtensions
             .PostConfigure(options =>
             {
                 ValidateOptions(options, new SecondaryPiHoleOptionsValidator(), nameof(SecondaryPiHoleOptions));
-                foreach (var node in options.Nodes)
-                {
-                    node.PasswordHash = PasswordHasher.ComputeSha256(node.Password);
-                }
             });
 
         services.AddOptions<SynchronizationOptions>()
@@ -43,6 +39,9 @@ public static class ServiceCollectionExtensions
             .Configure(options => BindApplication(configuration, options))
             .PostConfigure(options =>
                 ValidateOptions(options, new ApplicationOptionsValidator(), nameof(ApplicationOptions)));
+
+        services.AddSingleton<IPiHoleSessionFactory, PiHoleSessionFactory>();
+        services.AddSingleton<ITeleporterClientFactory, TeleporterClientFactory>();
 
         return services;
     }

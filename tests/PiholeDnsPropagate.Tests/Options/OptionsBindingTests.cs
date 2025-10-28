@@ -7,7 +7,6 @@ using Microsoft.Extensions.Options;
 using NUnit.Framework;
 using PiholeDnsPropagate.Extensions;
 using PiholeDnsPropagate.Options;
-using PiholeDnsPropagate.Security;
 
 namespace PiholeDnsPropagate.Tests.Options;
 
@@ -36,13 +35,13 @@ public class OptionsBindingTests
 
         var primary = provider.GetRequiredService<IOptionsMonitor<PrimaryPiHoleOptions>>().CurrentValue;
         Assert.That(primary.BaseUrl, Is.EqualTo(new Uri("https://primary.local")));
-        Assert.That(primary.PasswordHash, Is.EqualTo(PasswordHasher.ComputeSha256("secret")));
+        Assert.That(primary.Password, Is.EqualTo("secret"));
 
         var secondary = provider.GetRequiredService<IOptionsMonitor<SecondaryPiHoleOptions>>().CurrentValue;
         Assert.That(secondary.Nodes, Has.Count.EqualTo(2));
         Assert.That(secondary.Nodes[0].Name, Is.EqualTo("node1"));
         Assert.That(secondary.Nodes[0].BaseUrl, Is.EqualTo(new Uri("https://node1.local")));
-        Assert.That(secondary.Nodes[0].PasswordHash, Is.EqualTo(PasswordHasher.ComputeSha256("pass1")));
+        Assert.That(secondary.Nodes[0].Password, Is.EqualTo("pass1"));
 
         var sync = provider.GetRequiredService<IOptionsMonitor<SynchronizationOptions>>().CurrentValue;
         Assert.That(sync.Interval, Is.EqualTo(TimeSpan.FromMinutes(10)));
