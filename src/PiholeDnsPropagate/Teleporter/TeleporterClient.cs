@@ -107,7 +107,10 @@ internal sealed class TeleporterClient : ITeleporterClient, IDisposable
                 using var stream = new MemoryStream(archiveContent, writable: false);
 
                 using var response = await CreateRequest("api", "teleporter")
-                    .PostMultipartAsync(content => content.AddFile("zip_upload", stream, "teleporter.zip"), cancellationToken: ct)
+                    .PostMultipartAsync(content =>
+                    {
+                        content.AddFile("file", stream, "teleporter.zip");
+                    }, cancellationToken: ct)
                     .ConfigureAwait(false);
 
                 response.ResponseMessage.EnsureSuccessStatusCode();
