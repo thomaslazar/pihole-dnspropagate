@@ -6,10 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
+using PiholeDnsPropagate.Options;
 using PiholeDnsPropagate.Teleporter;
 using PiholeDnsPropagate.Teleporter.Authentication;
 using Tomlyn;
 using Tomlyn.Model;
+using PiholeDnsPropagate.Tests.Teleporter.Fixtures;
 
 namespace PiholeDnsPropagate.Tests.Teleporter;
 
@@ -122,6 +124,149 @@ public class TeleporterSandboxTests
         Assert.That(cnames, Is.EqualTo(desiredRecords.CnameRecords));
 
         AssertArchiveEntriesEqualExceptToml(originalArchive, updatedArchive);
+    }
+
+    [Test]
+    [Explicit("Requires sandbox running primary & secondary Pi-hole; see docs."), Category("Integration")]
+    public async Task SyncCoordinatorAppliesChangesAcrossSecondaries()
+    {
+        var primaryUrl = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_PRIMARY_URL")
+                         ?? Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_URL");
+        var secondaryUrl = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_SECONDARY_URL");
+        var password = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_PASSWORD");
+
+        if (string.IsNullOrWhiteSpace(primaryUrl) || string.IsNullOrWhiteSpace(secondaryUrl) || string.IsNullOrWhiteSpace(password))
+        {
+            Assert.Inconclusive("SANDBOX_PIHOLE_PRIMARY_URL, SANDBOX_PIHOLE_SECONDARY_URL, and SANDBOX_PIHOLE_PASSWORD must be set.");
+        }
+
+        using var loggerFactory = LoggerFactory.Create(builder => { });
+        var sessionFactory = new PiHoleSessionFactory(loggerFactory.CreateLogger<PiHoleSessionFactory>());
+        var syncOptions = new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions());
+        var clientFactory = new TeleporterClientFactory(sessionFactory, syncOptions, loggerFactory.CreateLogger<TeleporterClient>());
+        var archiveProcessor = new TeleporterArchiveProcessor();
+
+        var primaryOptions = new PrimaryPiHoleOptions { BaseUrl = new Uri(primaryUrl!, UriKind.Absolute), Password = password! };
+        var secondaryOptions = new SecondaryPiHoleOptions
+        {
+            Nodes =
+            {
+                new SecondaryPiHoleNodeOptions { Name = "secondary", BaseUrl = new Uri(secondaryUrl!, UriKind.Absolute), Password = password! }
+            }
+        };
+
+        await WaitForTeleporterAsync(primaryUrl!).ConfigureAwait(false);
+        await WaitForTeleporterAsync(secondaryUrl!).ConfigureAwait(false);
+
+        var primaryClient = clientFactory.CreateForPrimary(primaryOptions);
+        TeleporterDnsRecords primaryRecords;
+        try
+        {
+            var primaryArchive = await primaryClient.DownloadArchiveAsync().ConfigureAwait(false);
+            primaryRecords = ParseRecords(primaryArchive);
+        }
+        finally
+        {
+            (primaryClient as IDisposable)?.Dispose();
+        }
+
+        // Seed secondary with divergent records to ensure coordinator applies updates.
+        var secondaryClient = clientFactory.CreateForSecondary(secondaryOptions.Nodes.Single());
+        try
+        {
+            var secondaryArchive = await secondaryClient.DownloadArchiveAsync().ConfigureAwait(false);
+            using var secondaryStream = new MemoryStream(secondaryArchive, writable: false);
+            var modified = await archiveProcessor.ReplaceDnsRecordsAsync(secondaryStream,
+                new TeleporterDnsRecords(new List<string> { "192.168.20.5 stale.local" }, new List<string>()), CancellationToken.None).ConfigureAwait(false);
+            await secondaryClient.UploadArchiveAsync(modified).ConfigureAwait(false);
+        }
+        finally
+        {
+            (secondaryClient as IDisposable)?.Dispose();
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+
+        var coordinator = new SyncCoordinator(
+            clientFactory,
+            archiveProcessor,
+            new TestOptionsMonitor<PrimaryPiHoleOptions>(primaryOptions),
+            new TestOptionsMonitor<SecondaryPiHoleOptions>(secondaryOptions),
+            loggerFactory.CreateLogger<SyncCoordinator>());
+
+        var result = await coordinator.SynchronizeAsync(dryRun: false).ConfigureAwait(false);
+        TestContext.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+        Assert.That(result.Secondaries.Single().Status, Is.EqualTo(SyncStatus.Success));
+
+        secondaryClient = clientFactory.CreateForSecondary(secondaryOptions.Nodes.Single());
+        try
+        {
+            var archive = await secondaryClient.DownloadArchiveAsync().ConfigureAwait(false);
+            var records = ParseRecords(archive);
+            Assert.That(records.Hosts, Is.EquivalentTo(primaryRecords.Hosts));
+            Assert.That(records.CnameRecords, Is.EquivalentTo(primaryRecords.CnameRecords));
+        }
+        finally
+        {
+            (secondaryClient as IDisposable)?.Dispose();
+        }
+    }
+
+    private static TeleporterDnsRecords ParseRecords(byte[] archive)
+    {
+        using var archiveStream = new MemoryStream(archive, writable: false);
+        using var zip = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: false);
+        var entry = zip.GetEntry("etc/pihole/pihole.toml") ?? zip.GetEntry("pihole/pihole.toml")
+            ?? throw new InvalidDataException("Missing pihole.toml in archive");
+
+        using var reader = new StreamReader(entry.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+        var toml = reader.ReadToEnd();
+        var model = Toml.Parse(toml).ToModel() as TomlTable;
+        if (model is not TomlTable table || !table.TryGetValue("dns", out var dnsValue) || dnsValue is not TomlTable dnsTable)
+        {
+            return TeleporterDnsRecords.Empty;
+        }
+
+        static string[] ReadArray(TomlTable table, string key)
+        {
+            if (!table.TryGetValue(key, out var value) || value is not TomlArray array)
+            {
+                return Array.Empty<string>();
+            }
+
+            return array.OfType<string>().ToArray();
+        }
+
+        return new TeleporterDnsRecords(ReadArray(dnsTable, "hosts"), ReadArray(dnsTable, "cnameRecords"));
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031", Justification = "Polling helper tolerates transient errors while waiting for sandbox readiness.")]
+    private static async Task WaitForTeleporterAsync(string baseUrl)
+    {
+        using var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        var attempts = 0;
+        while (attempts < 60)
+        {
+            try
+            {
+                using var response = await httpClient.GetAsync(new Uri(new Uri(baseUrl, UriKind.Absolute), "/api/teleporter"), HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // ignore and retry
+            }
+            catch (TaskCanceledException)
+            {
+                // ignore and retry
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            attempts++;
+        }
     }
 
     private static void AssertArchiveEntriesEqualExceptToml(byte[] original, byte[] updated)

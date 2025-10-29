@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPiHoleSessionFactory, PiHoleSessionFactory>();
         services.AddSingleton<ITeleporterClientFactory, TeleporterClientFactory>();
         services.AddSingleton<ITeleporterArchiveProcessor, TeleporterArchiveProcessor>();
+        services.AddSingleton<ISyncCoordinator, SyncCoordinator>();
 
         return services;
     }
