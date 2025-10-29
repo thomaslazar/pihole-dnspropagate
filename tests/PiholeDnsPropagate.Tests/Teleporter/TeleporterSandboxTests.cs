@@ -12,6 +12,8 @@ using PiholeDnsPropagate.Teleporter.Authentication;
 using Tomlyn;
 using Tomlyn.Model;
 using PiholeDnsPropagate.Tests.Teleporter.Fixtures;
+using PiholeDnsPropagate.Worker.Services;
+using PiholeDnsPropagate.Worker.Scheduling;
 
 namespace PiholeDnsPropagate.Tests.Teleporter;
 
@@ -195,6 +197,7 @@ public class TeleporterSandboxTests
         await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         // Act
+        var syncState = new SyncState();
         var coordinator = new SyncCoordinator(
             clientFactory,
             archiveProcessor,
@@ -202,11 +205,11 @@ public class TeleporterSandboxTests
             new TestOptionsMonitor<SecondaryPiHoleOptions>(secondaryOptions),
             loggerFactory.CreateLogger<SyncCoordinator>());
 
-        var result = await coordinator.SynchronizeAsync(dryRun: false).ConfigureAwait(false);
-        TestContext.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+        var manualCommand = new ManualSyncCommand(coordinator, syncState, loggerFactory.CreateLogger<ManualSyncCommand>());
+        var exitCode = await manualCommand.ExecuteAsync(null, new ManualSyncCommandSettings { DryRun = false }, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
-        Assert.That(result.Secondaries.Single().Status, Is.EqualTo(SyncStatus.Success));
+        Assert.That(exitCode, Is.EqualTo(0));
 
         secondaryClient = clientFactory.CreateForSecondary(secondaryOptions.Nodes.Single());
         try

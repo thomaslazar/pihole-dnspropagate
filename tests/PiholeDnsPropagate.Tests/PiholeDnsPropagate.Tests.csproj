@@ -10,11 +10,9 @@
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="DotNet.Testcontainers" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\PiholeDnsPropagate\PiholeDnsPropagate.csproj" />
+    <ProjectReference Include="..\..\src\PiholeDnsPropagate.Worker\PiholeDnsPropagate.Worker.csproj" />
   </ItemGroup>
 </Project>

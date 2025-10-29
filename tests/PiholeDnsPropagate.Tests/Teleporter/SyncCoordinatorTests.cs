@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,15 +14,16 @@ using NSubstitute;
 namespace PiholeDnsPropagate.Tests.Teleporter;
 
 [TestFixture]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("MicrosoftDesign", "CA1515", Justification = "NUnit requires public fixtures.")]
+[SuppressMessage("MicrosoftDesign", "CA1515", Justification = "NUnit requires public fixtures.")]
+[SuppressMessage("Performance", "CA1861", Justification = "Test readability prioritized over array caching.")]
 public class SyncCoordinatorTests
 {
     [Test]
     public async Task SynchronizeAsyncDryRunDoesNotUploadAndLogsSummary()
     {
         // Arrange
-        var primaryArchive = BuildArchive(new List<string> { "192.168.1.10 primary.local" }, new List<string>());
-        var secondaryArchive = BuildArchive(new List<string> { "192.168.1.11 old.local" }, new List<string> { "alias.local,old.local" });
+        var primaryArchive = BuildArchive(new[] { "192.168.1.10 primary.local" }, Array.Empty<string>());
+        var secondaryArchive = BuildArchive(new[] { "192.168.1.11 old.local" }, new[] { "alias.local,old.local" });
 
         var primaryOptions = new PrimaryPiHoleOptions { BaseUrl = new Uri("http://primary"), Password = "secret" };
         var secondaryOptions = new SecondaryPiHoleOptions
@@ -59,9 +61,9 @@ public class SyncCoordinatorTests
     public async Task SynchronizeAsyncContinuesAfterFailures()
     {
         // Arrange
-        var primaryArchive = BuildArchive(new List<string> { "10.0.0.1 main.local" }, new List<string>());
-        var failingArchive = BuildArchive(new List<string>(), new List<string>());
-        var successArchive = BuildArchive(new List<string>(), new List<string>());
+        var primaryArchive = BuildArchive(new[] { "10.0.0.1 main.local" }, Array.Empty<string>());
+        var failingArchive = BuildArchive(Array.Empty<string>(), Array.Empty<string>());
+        var successArchive = BuildArchive(Array.Empty<string>(), Array.Empty<string>());
 
         var primaryOptions = new PrimaryPiHoleOptions { BaseUrl = new Uri("http://primary"), Password = "secret" };
         var secondaryOptions = new SecondaryPiHoleOptions
