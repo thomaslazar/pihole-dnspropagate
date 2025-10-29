@@ -9,6 +9,7 @@ using PiholeDnsPropagate.Teleporter;
 using PiholeDnsPropagate.Tests.Teleporter.Fixtures;
 using Tomlyn;
 using Tomlyn.Model;
+using PiholeDnsPropagate.Tests.Common;
 
 namespace PiholeDnsPropagate.Tests.Teleporter;
 
@@ -128,6 +129,8 @@ cnameRecords = ["alias.local,old.local"]
         Assert.That(zip.GetEntry("etc/hosts")!.LastWriteTime, Is.EqualTo(ReferenceTimestamp.AddHours(1)));
         Assert.That(zip.GetEntry("etc/pihole/dhcp.leases")!.LastWriteTime, Is.EqualTo(ReferenceTimestamp.AddHours(2)));
         Assert.That(zip.GetEntry("etc/pihole/pihole.toml")!.LastWriteTime, Is.EqualTo(ReferenceTimestamp));
+
+        ZipArchiveAssertions.AssertOnlyTomlDiffers(archive, result);
     }
 
     [Test]

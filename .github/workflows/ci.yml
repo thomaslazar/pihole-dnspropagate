@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - Initial-development
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test with coverage
+        run: >-
+          dotnet test --configuration Release --no-build
+          -p:CollectCoverage=true
+          -p:CoverletOutput=TestResults/coverage/
+          -p:CoverletOutputFormat=cobertura%2copencover
+          -p:Threshold=80
+          -p:ThresholdType=line
+          -p:ThresholdStat=total
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: tests/PiholeDnsPropagate.Tests/TestResults/coverage/
+          if-no-files-found: warn

@@ -1,4 +1,5 @@
 # 🧩 pihole-dnspropagate
+[![CI](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/ci.yml/badge.svg)](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/ci.yml)
 **Synchronize Pi-hole local DNS and CNAME records across multiple Pi-hole instances — nothing more, nothing less.**
 
 ---
@@ -60,6 +61,15 @@ services:
 - 🔄 Diff-based sync to minimize API calls  
 - 📊 Metrics endpoint for Prometheus  
 - 🕹️ CLI support for manual sync trigger  
+
+---
+
+## 🧪 Testing & Coverage
+- Run the full test suite with coverage enforcement:
+  ```bash
+  dotnet test /p:CollectCoverage=true /p:CoverletOutput=TestResults/coverage/ /p:CoverletOutputFormat=cobertura%2copencover /p:Threshold=80 /p:ThresholdType=line /p:ThresholdStat=total
+  ```
+- Integration tests automatically provision a primary and secondary Pi-hole via Testcontainers; ensure Docker is available before running the suite.
 
 ---
 

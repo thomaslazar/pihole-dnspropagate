@@ -53,4 +53,50 @@ public sealed class ManualSyncCommandTests
         Assert.That(exitCode, Is.EqualTo(-1));
         await coordinator.DidNotReceiveWithAnyArgs().SynchronizeAsync(default, default).ConfigureAwait(false);
     }
+
+    [Test]
+    public async Task ExecuteAsyncReturnsFailureCodeOnException()
+    {
+        // Arrange
+        var coordinator = Substitute.For<ISyncCoordinator>();
+        var syncState = Substitute.For<ISyncState>();
+        syncState.TryMarkRunning().Returns(true);
+        coordinator
+            .SynchronizeAsync(false, Arg.Any<CancellationToken>())
+            .Returns<Task<SyncResult>>(_ => throw new InvalidOperationException("boom"));
+        var command = new ManualSyncCommand(coordinator, syncState, NullLogger<ManualSyncCommand>.Instance);
+
+        // Act
+        var exitCode = await command.ExecuteAsync(null, new ManualSyncCommandSettings(), CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        Assert.That(exitCode, Is.EqualTo(1));
+        syncState.Received().MarkFailure(Arg.Any<DateTimeOffset>());
+        syncState.Received().MarkIdle();
+    }
+
+    [Test]
+    public async Task ExecuteAsyncReturnsPartialFailureWhenSecondaryFails()
+    {
+        // Arrange
+        var coordinator = Substitute.For<ISyncCoordinator>();
+        var syncState = Substitute.For<ISyncState>();
+        syncState.TryMarkRunning().Returns(true);
+        var syncResult = new SyncResult(
+            new SyncNodeResult("primary", SyncStatus.Success, new RecordCounts(1, 1)),
+            new[]
+            {
+                new SyncNodeResult("secondary", SyncStatus.Failed, new RecordCounts(1, 1), Error: "failure")
+            });
+        coordinator.SynchronizeAsync(false, Arg.Any<CancellationToken>()).Returns(Task.FromResult(syncResult));
+        var command = new ManualSyncCommand(coordinator, syncState, NullLogger<ManualSyncCommand>.Instance);
+
+        // Act
+        var exitCode = await command.ExecuteAsync(null, new ManualSyncCommandSettings(), CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        Assert.That(exitCode, Is.EqualTo(2));
+        syncState.Received().MarkFailure(Arg.Any<DateTimeOffset>());
+        syncState.Received().MarkIdle();
+    }
 }

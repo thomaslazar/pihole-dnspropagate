@@ -43,4 +43,56 @@ public sealed class CronSchedulerServiceTests
         // Assert
         await coordinator.ReceivedWithAnyArgs().SynchronizeAsync(default, default).ConfigureAwait(false);
     }
+
+    [Test]
+    public async Task SchedulerMarksFailureWhenCoordinatorThrows()
+    {
+        // Arrange
+        var coordinator = Substitute.For<ISyncCoordinator>();
+        coordinator
+            .SynchronizeAsync(false, Arg.Any<CancellationToken>())
+            .Returns<Task<SyncResult>>(_ => throw new InvalidOperationException("boom"));
+
+        var options = new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions
+        {
+            Interval = TimeSpan.FromMilliseconds(50),
+            DryRun = false
+        });
+
+        var syncState = new SyncState();
+        using var scheduler = new CronSchedulerService(coordinator, options, syncState, NullLogger<CronSchedulerService>.Instance);
+
+        // Act
+        await scheduler.StartAsync(CancellationToken.None).ConfigureAwait(false);
+        await Task.Delay(100).ConfigureAwait(false);
+        await scheduler.StopAsync(CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        Assert.That(syncState.CurrentStatus, Is.EqualTo(SyncRunStatus.Failure));
+        await coordinator.ReceivedWithAnyArgs().SynchronizeAsync(default, default).ConfigureAwait(false);
+    }
+
+    [Test]
+    public async Task SchedulerSkipsWhenSyncAlreadyRunning()
+    {
+        // Arrange
+        var coordinator = Substitute.For<ISyncCoordinator>();
+        var options = new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions
+        {
+            Interval = TimeSpan.FromMilliseconds(30)
+        });
+
+        var syncState = Substitute.For<ISyncState>();
+        syncState.TryMarkRunning().Returns(false);
+        using var scheduler = new CronSchedulerService(coordinator, options, syncState, NullLogger<CronSchedulerService>.Instance);
+
+        // Act
+        await scheduler.StartAsync(CancellationToken.None).ConfigureAwait(false);
+        await Task.Delay(100).ConfigureAwait(false);
+        await scheduler.StopAsync(CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        await coordinator.DidNotReceiveWithAnyArgs().SynchronizeAsync(default, default).ConfigureAwait(false);
+        syncState.DidNotReceive().MarkIdle();
+    }
 }
