@@ -24,6 +24,7 @@ public sealed class TeleporterArchiveProcessorTests
     [Test]
     public void ReplaceDnsRecordsAsyncUpdatesHostsAndCnames()
     {
+        // Arrange
         var originalToml = """
 [dns]
 hosts = ["192.168.1.1 old.local"]
@@ -36,6 +37,8 @@ cnameRecords = ["alias.local,old.local"]
 
         var processor = new TeleporterArchiveProcessor();
         using var inputStream = new MemoryStream(archive, writable: false);
+
+        // Act
         var result = processor.ReplaceDnsRecordsAsync(
             inputStream,
             new TeleporterDnsRecords(
@@ -43,6 +46,7 @@ cnameRecords = ["alias.local,old.local"]
                 new List<string> { "service.local,new.local" }),
             default).GetAwaiter().GetResult();
 
+        // Assert
         using var outputStream = new MemoryStream(result, writable: false);
         using var zip = new ZipArchive(outputStream, ZipArchiveMode.Read, leaveOpen: true);
 
@@ -69,6 +73,7 @@ cnameRecords = ["alias.local,old.local"]
     [Test]
     public void ReplaceDnsRecordsAsyncPreservesLineEndings()
     {
+        // Arrange
         const string originalToml = "[dns]\r\nhosts = [\"192.168.1.1 old.local\"]\r\ncnameRecords = [\"alias.local,old.local\"]";
         var archive = new TeleporterArchiveBuilder()
             .WithToml(originalToml)
@@ -76,11 +81,14 @@ cnameRecords = ["alias.local,old.local"]
 
         var processor = new TeleporterArchiveProcessor();
         using var inputStream = new MemoryStream(archive, writable: false);
+
+        // Act
         var result = processor.ReplaceDnsRecordsAsync(
             inputStream,
             new TeleporterDnsRecords(new List<string>(), new List<string>()),
             default).GetAwaiter().GetResult();
 
+        // Assert
         using var outputStream = new MemoryStream(result, writable: false);
         using var zip = new ZipArchive(outputStream, ZipArchiveMode.Read, leaveOpen: true);
         using var reader = new StreamReader(zip.GetEntry("etc/pihole/pihole.toml")!.Open(), Encoding.UTF8);
@@ -94,6 +102,7 @@ cnameRecords = ["alias.local,old.local"]
     [Test]
     public void ReplaceDnsRecordsAsyncPreservesArchiveStructureAndMetadata()
     {
+        // Arrange
         var archive = new TeleporterArchiveBuilder()
             .WithToml("[dns]\nhosts=[]\n", ReferenceTimestamp)
             .WithHosts("127.0.0.1 localhost", ReferenceTimestamp.AddHours(1))
@@ -102,11 +111,14 @@ cnameRecords = ["alias.local,old.local"]
 
         var processor = new TeleporterArchiveProcessor();
         using var inputStream = new MemoryStream(archive, writable: false);
+
+        // Act
         var result = processor.ReplaceDnsRecordsAsync(
             inputStream,
             new TeleporterDnsRecords(new List<string>(), new List<string>()),
             default).GetAwaiter().GetResult();
 
+        // Assert
         using var outputStream = new MemoryStream(result, writable: false);
         using var zip = new ZipArchive(outputStream, ZipArchiveMode.Read, leaveOpen: true);
 
@@ -121,17 +133,21 @@ cnameRecords = ["alias.local,old.local"]
     [Test]
     public void ReplaceDnsRecordsAsyncCreatesDnsSectionWhenMissing()
     {
+        // Arrange
         var archive = new TeleporterArchiveBuilder()
             .WithToml("# empty file")
             .Build();
 
         var processor = new TeleporterArchiveProcessor();
         using var inputStream = new MemoryStream(archive, writable: false);
+
+        // Act
         var result = processor.ReplaceDnsRecordsAsync(
             inputStream,
             new TeleporterDnsRecords(new List<string> { "10.0.0.5 example.local" }, new List<string>()),
             default).GetAwaiter().GetResult();
 
+        // Assert
         using var zip = new ZipArchive(new MemoryStream(result, writable: false), ZipArchiveMode.Read, leaveOpen: false);
         using var reader = new StreamReader(zip.GetEntry("etc/pihole/pihole.toml")!.Open(), Encoding.UTF8);
         var text = reader.ReadToEnd();

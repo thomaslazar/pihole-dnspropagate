@@ -19,6 +19,7 @@ public class SyncCoordinatorTests
     [Test]
     public async Task SynchronizeAsyncDryRunDoesNotUploadAndLogsSummary()
     {
+        // Arrange
         var primaryArchive = BuildArchive(new List<string> { "192.168.1.10 primary.local" }, new List<string>());
         var secondaryArchive = BuildArchive(new List<string> { "192.168.1.11 old.local" }, new List<string> { "alias.local,old.local" });
 
@@ -46,8 +47,10 @@ public class SyncCoordinatorTests
             new TestOptionsMonitor<SecondaryPiHoleOptions>(secondaryOptions),
             new ListLogger<SyncCoordinator>());
 
+        // Act
         var result = await coordinator.SynchronizeAsync(dryRun: true).ConfigureAwait(false);
 
+        // Assert
         Assert.That(result.Secondaries.Single().Status, Is.EqualTo(SyncStatus.Skipped));
         Assert.That(secondaryClient.UploadInvoked, Is.False);
     }
@@ -55,6 +58,7 @@ public class SyncCoordinatorTests
     [Test]
     public async Task SynchronizeAsyncContinuesAfterFailures()
     {
+        // Arrange
         var primaryArchive = BuildArchive(new List<string> { "10.0.0.1 main.local" }, new List<string>());
         var failingArchive = BuildArchive(new List<string>(), new List<string>());
         var successArchive = BuildArchive(new List<string>(), new List<string>());
@@ -87,8 +91,10 @@ public class SyncCoordinatorTests
             new TestOptionsMonitor<SecondaryPiHoleOptions>(secondaryOptions),
             logger);
 
+        // Act
         var result = await coordinator.SynchronizeAsync(dryRun: false).ConfigureAwait(false);
 
+        // Assert
         var failingResult = result.Secondaries.Single(r => r.NodeName == "failing");
         var successResult = result.Secondaries.Single(r => r.NodeName == "second");
 

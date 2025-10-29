@@ -22,14 +22,17 @@ public class TeleporterClientTests
     [Test]
     public async Task DownloadArchiveAsyncReturnsPayload()
     {
+        // Arrange
         using var httpTest = new HttpTest();
         httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
         httpTest.RespondWith("payload", 200, new Dictionary<string, string> { ["Content-Type"] = "application/zip" });
 
         using var client = CreateClient();
 
+        // Act
         var bytes = await client.DownloadArchiveAsync().ConfigureAwait(false);
 
+        // Assert
         Assert.That(bytes, Is.EqualTo(Encoding.UTF8.GetBytes("payload")));
         httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Post);
         httpTest.ShouldHaveCalled("*/api/teleporter")
@@ -40,6 +43,7 @@ public class TeleporterClientTests
     [Test]
     public void DownloadArchiveAsyncRaisesOnUnauthorized()
     {
+        // Arrange
         using var httpTest = new HttpTest();
         httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
         httpTest.RespondWith(status: 401);
@@ -48,6 +52,7 @@ public class TeleporterClientTests
 
         using var client = CreateClient();
 
+        // Act / Assert
         Assert.DoesNotThrowAsync(async () => await client.DownloadArchiveAsync().ConfigureAwait(false));
         httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Post).Times(2);
         httpTest.ShouldHaveCalled("*/api/teleporter").WithVerb(HttpMethod.Get).Times(2);
@@ -56,14 +61,17 @@ public class TeleporterClientTests
     [Test]
     public async Task UploadArchiveAsyncSucceeds()
     {
+        // Arrange
         using var httpTest = new HttpTest();
         httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
         httpTest.RespondWith("", 200); // upload response
 
         using var client = CreateClient();
 
+        // Act
         await client.UploadArchiveAsync(new byte[] { 5, 6, 7 }).ConfigureAwait(false);
 
+        // Assert
         httpTest.ShouldHaveCalled("*/api/teleporter")
             .WithVerb(HttpMethod.Post)
             .WithHeader("X-FTL-SID", "sid-token")

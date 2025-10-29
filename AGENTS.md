@@ -11,6 +11,7 @@ Target .NET 9 and enable nullable reference types. Use four-space indentation, P
 
 ## Testing Guidelines
 Adopt NUnit with FluentAssertions or built-in constraints, and use NSubstitute for mocking dependencies. Name test projects `<ProjectName>.Tests` and test files after the class under test (e.g., `DnsSyncServiceTests.cs`). Cover every public service and client method with at least one happy-path and one failure-path test; critical sync logic should reach 80% branch coverage. Exercise API integrations via test doubles that mimic Pi-hole responses; place reusable fixtures in `tests/Common`.
+- Structure tests using the Arrange–Act–Assert pattern (annotate each section with comments `// Arrange`, `// Act`, `// Assert`).
 
 ## Commit & Pull Request Guidelines
 Write commits using the template `type(scope): summary`, followed by `Changes:` and `Validation:` sections listing granular edits and commands run. Acceptable types: `feat`, `fix`, `chore`, `docs`, `test`, `build`, `refactor`, `perf`, `ci`, `revert`. Keep summaries ≤72 characters, imperative, and scope optional but descriptive (`sync`, `teleporter-client`). Reference related issues in the `Refs:` line (`Refs #12`) when applicable. PRs need a concise summary, validation evidence (command output or screenshots for tooling), and a checklist for secrets: confirm API keys are mocked and configs exclude real tokens. Request review from @maintainers once CI is green and tag new configuration knobs in the release notes draft.

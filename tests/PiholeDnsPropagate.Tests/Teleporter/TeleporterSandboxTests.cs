@@ -27,6 +27,7 @@ public class TeleporterSandboxTests
     [Explicit("Requires running Pi-hole sandbox and SANDBOX_PIHOLE_URL/password variables.")]
     public async Task DownloadAndUploadArchiveAgainstSandbox()
     {
+        // Arrange
         var baseUrlText = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_URL");
         var password = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_PASSWORD");
 
@@ -48,10 +49,12 @@ public class TeleporterSandboxTests
             new PiHoleSessionFactory(loggerFactory.CreateLogger<PiHoleSessionFactory>()),
             loggerFactory.CreateLogger<TeleporterClient>());
 
+        // Act
         var archive = await client.DownloadArchiveAsync().ConfigureAwait(false);
         Assert.That(archive, Is.Not.Null.And.Not.Empty,
             "Download should yield bytes from /api/teleporter.");
 
+        // Assert
         try
         {
             using var archiveStream = new MemoryStream(archive, writable: false);
@@ -77,6 +80,7 @@ public class TeleporterSandboxTests
     [Explicit("Requires sandbox with primary & secondary Pi-hole running (see docs/pihole-sandbox.md)."), Category("Integration")]
     public async Task ProcessArchiveAndApplyToSecondary()
     {
+        // Arrange
         var secondaryUrl = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_SECONDARY_URL")
                            ?? Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_URL");
         var password = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_PASSWORD");
@@ -101,6 +105,7 @@ public class TeleporterSandboxTests
         var processor = new TeleporterArchiveProcessor();
         var desiredRecords = new TeleporterDnsRecords(SecondaryHostRecords, SecondaryCnameRecords);
 
+        // Act
         var originalArchive = await client.DownloadArchiveAsync().ConfigureAwait(false);
         using var originalStream = new MemoryStream(originalArchive, writable: false);
         var processedArchive = await processor.ReplaceDnsRecordsAsync(originalStream, desiredRecords).ConfigureAwait(false);
@@ -120,6 +125,7 @@ public class TeleporterSandboxTests
         var hosts = ((TomlArray)dnsTable!["hosts"]).OfType<string>().ToArray();
         var cnames = ((TomlArray)dnsTable!["cnameRecords"]).OfType<string>().ToArray();
 
+        // Assert
         Assert.That(hosts, Is.EqualTo(desiredRecords.Hosts));
         Assert.That(cnames, Is.EqualTo(desiredRecords.CnameRecords));
 
@@ -130,6 +136,7 @@ public class TeleporterSandboxTests
     [Explicit("Requires sandbox running primary & secondary Pi-hole; see docs."), Category("Integration")]
     public async Task SyncCoordinatorAppliesChangesAcrossSecondaries()
     {
+        // Arrange
         var primaryUrl = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_PRIMARY_URL")
                          ?? Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_URL");
         var secondaryUrl = Environment.GetEnvironmentVariable("SANDBOX_PIHOLE_SECONDARY_URL");
@@ -187,6 +194,7 @@ public class TeleporterSandboxTests
 
         await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
+        // Act
         var coordinator = new SyncCoordinator(
             clientFactory,
             archiveProcessor,
@@ -196,6 +204,8 @@ public class TeleporterSandboxTests
 
         var result = await coordinator.SynchronizeAsync(dryRun: false).ConfigureAwait(false);
         TestContext.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+
+        // Assert
         Assert.That(result.Secondaries.Single().Status, Is.EqualTo(SyncStatus.Success));
 
         secondaryClient = clientFactory.CreateForSecondary(secondaryOptions.Nodes.Single());
