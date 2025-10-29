@@ -1,5 +1,6 @@
 # 🧩 pihole-dnspropagate
 [![CI](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/ci.yml/badge.svg)](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/ci.yml)
+
 **Synchronize Pi-hole local DNS and CNAME records across multiple Pi-hole instances — nothing more, nothing less.**
 
 ---
@@ -14,9 +15,11 @@ Existing sync tools (like *Nebula Sync*) replicate entire Pi-hole configurations
 ## ⚙️ Features
 - 🔄 **Automatic propagation** of local DNS and CNAME records between Pi-holes.  
 - 🧭 **Source-defined sync** – choose one “primary” Pi-hole as the authoritative source.  
-- 🕒 **Periodic updates** – customizable sync interval.  
+- 🕒 **Periodic updates** – scheduler supports fixed intervals or cron expressions.  
+- 🔧 **Manual sync CLI** – trigger `sync-now` from the container without waiting for the scheduler.  
 - 🧰 **API-based updates** – no file-level or full-config syncing required.  
-- 🐳 **Docker-ready** – runs as a self-contained service.  
+- 📈 **Health endpoint** – JSON status exposed on `/healthz` for readiness checks.  
+- 🐳 **Docker-ready** – multi-stage image and compose templates included.  
 
 ---
 
@@ -31,36 +34,57 @@ This ensures your network stays consistent even if you manage several Pi-holes i
 ---
 
 ## 🧩 Example Configuration
-Example environment variables for Docker Compose:
+Example docker-compose snippet using the environment variables consumed by the worker:
 
 ```yaml
 services:
   pihole-dnspropagate:
-    image: ghcr.io/yourusername/pihole-dnspropagate:latest
-    container_name: pihole-dnspropagate
+    image: ghcr.io/thomaslazar/pihole-dnspropagate:latest
     restart: unless-stopped
-    environment:
-      - PRIMARY_PIHOLE_URL=http://pihole-master.local
-      - PRIMARY_PIHOLE_API_KEY=your_master_api_key
-      - TARGETS=http://pihole-node1.local,http://pihole-node2.local
-      - TARGET_API_KEYS=key1,key2
-      - SYNC_INTERVAL=300   # seconds
+    env_file:
+      - ./pihole-dnspropagate.env
+    networks:
+      - pihole-sync
+
+networks:
+  pihole-sync:
+    driver: bridge
 ```
+
+And the accompanying `pihole-dnspropagate.env` could look like:
+
+```bash
+PRIMARY_PIHOLE_URL=http://pihole-primary.local
+PRIMARY_PIHOLE_PASSWORD=super-secret
+SECONDARY_PIHOLE_URLS=http://pihole-secondary-1.local,http://pihole-secondary-2.local
+SECONDARY_PIHOLE_PASSWORDS=super-secret,super-secret
+SECONDARY_PIHOLE_NAMES=secondary-1,secondary-2
+SYNC_INTERVAL=00:05:00
+# SYNC_CRON=*/10 * * * *
+SYNC_DRY_RUN=false
+LOG_LEVEL=Information
+HEALTH_PORT=8080
+```
+
+The full list of configuration options and compose templates lives in [`docs/configuration.md`](docs/configuration.md).
 
 ---
 
 ## 🧰 Requirements
-- Pi-hole **v6 or later** (API-enabled).  
-- API access enabled on all target Pi-hole instances.  
-- Docker or Podman environment.  
+- Pi-hole **v6 or later** with HTTP API enabled.  
+- Admin or application passwords for the primary and secondary instances.  
+- Docker / Podman for container deployments, or .NET 9 SDK for local builds.  
+- Network connectivity from the worker to each Pi-hole host (DNS/IP reachability).  
 
 ---
 
 ## 🧱 Roadmap
 - ✅ Basic DNS + CNAME propagation  
-- 🔄 Diff-based sync to minimize API calls  
+- ✅ Scheduler + manual CLI + health endpoint  
+- 🔄 Session teardown & smarter backoff to avoid rate limits  
 - 📊 Metrics endpoint for Prometheus  
-- 🕹️ CLI support for manual sync trigger  
+- 🗂️ Diff-based sync to minimize uploads  
+- 🚀 CI image publishing to GHCR  
 
 ---
 
@@ -81,6 +105,10 @@ services:
   docker compose -f deploy/compose/docker-compose.dev.yaml up -d
   ```
 - Configure environment variables via `.env.dev` (or your own copy) and review advanced deployment guidance in `docs/configuration.md`.
+- Trigger an immediate synchronization without waiting for the scheduler:
+  ```bash
+  docker compose run --rm pihole-dnspropagate sync-now
+  ```
 
 ---
 
@@ -88,7 +116,10 @@ services:
 Contributions, issues, and feature requests are welcome!  
 Feel free to open a PR or an issue to discuss new ideas.
 
+> **Development Note**  
+> This project is primarily developed with OpenAI Codex / agentic tooling, and every change is reviewed and approved by a human maintainer before landing in the main branch.
+
 ---
 
 ## 📜 License
-MIT License © 2025 Your Name  
+MIT License © 2025 Thomas Lazar
