@@ -71,6 +71,17 @@ services:
   ```
 - Integration tests automatically provision a primary and secondary Pi-hole via Testcontainers; ensure Docker is available before running the suite.
 
+## 🐳 Container Usage
+- Build the worker image locally with:
+  ```bash
+  docker build -t pihole-dnspropagate:dev .
+  ```
+- Launch the service using the development compose stack:
+  ```bash
+  docker compose -f deploy/compose/docker-compose.dev.yaml up -d
+  ```
+- Configure environment variables via `.env.dev` (or your own copy) and review advanced deployment guidance in `docs/configuration.md`.
+
 ---
 
 ## 🧑‍💻 Contributing

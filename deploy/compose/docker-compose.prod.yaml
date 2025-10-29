@@ -1,0 +1,14 @@
+services:
+  pihole-dnspropagate:
+    image: ghcr.io/thomaslazar/pihole-dnspropagate:latest
+    restart: unless-stopped
+    env_file:
+      - ../../.env.dev
+    networks:
+      - pihole-sync
+    ports:
+      - "8080:8080"
+
+networks:
+  pihole-sync:
+    external: true
