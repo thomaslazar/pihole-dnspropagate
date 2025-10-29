@@ -88,33 +88,11 @@ The full list of configuration options and compose templates lives in [`docs/con
 
 ---
 
-## 🧪 Testing & Coverage
-- Run the full test suite with coverage enforcement:
-  ```bash
-  dotnet test /p:CollectCoverage=true /p:CoverletOutput=TestResults/coverage/ /p:CoverletOutputFormat=cobertura%2copencover /p:Threshold=80 /p:ThresholdType=line /p:ThresholdStat=total
-  ```
-- Integration tests automatically provision a primary and secondary Pi-hole via Testcontainers; ensure Docker is available before running the suite.
-
-## 🐳 Container Usage
-- Build the worker image locally with:
-  ```bash
-  docker build -t pihole-dnspropagate:dev .
-  ```
-- Launch the service using the development compose stack:
-  ```bash
-  docker compose -f deploy/compose/docker-compose.dev.yaml up -d
-  ```
-- Configure environment variables via `.env.dev` (or your own copy) and review advanced deployment guidance in `docs/configuration.md`.
-- Trigger an immediate synchronization without waiting for the scheduler:
-  ```bash
-  docker compose run --rm pihole-dnspropagate sync-now
-  ```
-
----
-
 ## 🧑‍💻 Contributing
 Contributions, issues, and feature requests are welcome!  
 Feel free to open a PR or an issue to discuss new ideas.
+
+Consult the [contributing guide](docs/contributing.md) for environment setup, testing, container workflows, and our release checklist.
 
 > **Development Note**  
 > This project is primarily developed with OpenAI Codex / agentic tooling, and every change is reviewed and approved by a human maintainer before landing in the main branch.
