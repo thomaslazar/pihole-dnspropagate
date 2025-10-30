@@ -64,6 +64,10 @@ Both files map port `8080` from the container so you can reach the `/healthz` en
 
 The worker exposes JSON health data on `/healthz`. When running inside Docker, the compose examples publish it on `http://localhost:8080/healthz`. Integrate this endpoint with your orchestrator or monitoring stack (e.g., Docker health checks, Kubernetes `Probe`, Prometheus blackbox).
 
+## Session Handling
+
+Each synchronization run authenticates against Pi-hole via `/api/auth`, performs the download/upload workflow, and explicitly deletes the session (`DELETE /api/auth`) before exiting. This prevents buildup of stale sessions and avoids HTTP 429 responses from the API. Expect re-authentication on every run; ensure the credentials supplied in your environment variables remain valid.
+
 ## Next Steps
 
 - Integrate image publishing into CI (e.g., GitHub Actions workflow pushing to GHCR).

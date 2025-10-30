@@ -8,7 +8,7 @@
 ## 🧠 Overview
 **pihole-dnspropagate** is a lightweight, containerized service designed to keep your **local DNS** and **CNAME records** consistent across multiple Pi-hole installations.  
 
-Existing sync tools (like *Nebula Sync*) replicate entire Pi-hole configurations, but they often overlook the local DNS and CNAME data stored separately in the Pi-hole API. **pihole-dnspropagate** focuses exclusively on this missing piece, using the Pi-hole API to pull records from a primary instance and apply them to others.
+Existing sync tools (like *Nebula Sync*) replicate entire Pi-hole configurations, but they usually don't support syncing of local DNS and CNAME data stored only in the Pi-hole configuration. **pihole-dnspropagate** focuses exclusively on this missing piece, using the Pi-hole API to pull records from a primary instance and apply them to others.
 
 ---
 
@@ -81,8 +81,8 @@ The full list of configuration options and compose templates lives in [`docs/con
 ## 🧱 Roadmap
 - ✅ Basic DNS + CNAME propagation  
 - ✅ Scheduler + manual CLI + health endpoint  
-- 🔄 Session teardown & smarter backoff to avoid rate limits  
-- 📊 Metrics endpoint for Prometheus  
+- ✅ Session teardown after each sync (PIDP-011)  
+- 🔄 Smarter backoff for Pi-hole rate limits  
 - 🗂️ Diff-based sync to minimize uploads  
 - 🚀 CI image publishing to GHCR  
 

@@ -14,7 +14,7 @@ using PiholeDnsPropagate.Teleporter.Authentication;
 
 namespace PiholeDnsPropagate.Teleporter;
 
-internal sealed class TeleporterClient : ITeleporterClient, IDisposable
+internal sealed class TeleporterClient : ITeleporterClient, IDisposable, IAsyncDisposable
 {
     private readonly TeleporterClientOptions _options;
     private readonly IPiHoleSessionFactory _sessionFactory;
@@ -24,12 +24,19 @@ internal sealed class TeleporterClient : ITeleporterClient, IDisposable
     private readonly string _baseUrl;
 
     private PiHoleSession? _session;
+    private bool _disposed;
 
     private static readonly Action<ILogger, string, int, TimeSpan, Exception?> LogRetryMessage =
         LoggerMessage.Define<string, int, TimeSpan>(
             LogLevel.Warning,
             new EventId(1001, nameof(TeleporterClient)),
             "Retrying Teleporter request for {Instance} (attempt {Attempt}, delay {Delay}).");
+
+    private static readonly Action<ILogger, string, Exception?> LogSessionInvalidateFailure =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(1002, nameof(TeleporterClient)),
+            "Failed to invalidate Pi-hole session for {Instance}.");
 
     [SuppressMessage("Reliability", "CA2000", Justification = "FlurlClient disposes HttpClient")] 
     public TeleporterClient(
@@ -125,14 +132,26 @@ internal sealed class TeleporterClient : ITeleporterClient, IDisposable
 
     private async Task EnsureSessionAsync(CancellationToken cancellationToken)
     {
-        if (_session == null || SessionExpired(_session))
+        if (_session == null)
         {
+            _session = await _sessionFactory.CreateSessionAsync(_options, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        if (SessionExpired(_session))
+        {
+            await InvalidateSessionAsync(cancellationToken).ConfigureAwait(false);
             _session = await _sessionFactory.CreateSessionAsync(_options, cancellationToken).ConfigureAwait(false);
         }
     }
 
     private async Task RefreshSessionAsync(CancellationToken cancellationToken)
     {
+        if (_session != null)
+        {
+            await InvalidateSessionAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         _session = await _sessionFactory.CreateSessionAsync(_options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -194,6 +213,63 @@ internal sealed class TeleporterClient : ITeleporterClient, IDisposable
 
     public void Dispose()
     {
-        _client.Dispose();
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        try
+        {
+            await InvalidateSessionAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        finally
+        {
+            _client.Dispose();
+        }
+
+        GC.SuppressFinalize(this);
+    }
+
+    [SuppressMessage("Design", "CA1031", Justification = "Session invalidation should not crash the worker; unexpected failures are logged.")]
+    private async Task InvalidateSessionAsync(CancellationToken cancellationToken)
+    {
+        var session = _session;
+        if (session is null || string.IsNullOrWhiteSpace(session.Sid))
+        {
+            return;
+        }
+
+        try
+        {
+            using var response = await CreateRequest("api", "auth")
+                .DeleteAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            // 2xx responses simply succeed. No additional handling required.
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (FlurlHttpException ex) when (ex.StatusCode is (int)HttpStatusCode.NotFound or (int)HttpStatusCode.Unauthorized)
+        {
+            // Session already gone; nothing to log.
+        }
+        catch (Exception ex)
+        {
+            LogSessionInvalidateFailure(_logger, _options.InstanceName, ex);
+        }
+        finally
+        {
+            _session = null;
+        }
     }
 }

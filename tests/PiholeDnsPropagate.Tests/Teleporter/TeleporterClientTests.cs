@@ -13,6 +13,8 @@ using PiholeDnsPropagate.Options;
 using PiholeDnsPropagate.Teleporter;
 using PiholeDnsPropagate.Teleporter.Authentication;
 
+#pragma warning disable CA2007 // Tests deliberately use default synchronization context
+
 namespace PiholeDnsPropagate.Tests.Teleporter;
 
 [TestFixture]
@@ -26,35 +28,43 @@ public class TeleporterClientTests
         using var httpTest = new HttpTest();
         httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
         httpTest.RespondWith("payload", 200, new Dictionary<string, string> { ["Content-Type"] = "application/zip" });
+        httpTest.RespondWith(status: 204);
 
-        using var client = CreateClient();
+        await using (var client = CreateClient())
+        {
+            // Act
+            var bytes = await client.DownloadArchiveAsync().ConfigureAwait(false);
 
-        // Act
-        var bytes = await client.DownloadArchiveAsync().ConfigureAwait(false);
+            // Assert
+            Assert.That(bytes, Is.EqualTo(Encoding.UTF8.GetBytes("payload")));
+            httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Post);
+            httpTest.ShouldHaveCalled("*/api/teleporter")
+                .WithVerb(HttpMethod.Get)
+                .WithHeader("X-FTL-SID", "sid-token");
+        }
 
-        // Assert
-        Assert.That(bytes, Is.EqualTo(Encoding.UTF8.GetBytes("payload")));
-        httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Post);
-        httpTest.ShouldHaveCalled("*/api/teleporter")
-            .WithVerb(HttpMethod.Get)
-            .WithHeader("X-FTL-SID", "sid-token");
+        httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Delete).Times(1);
     }
 
     [Test]
-    public void DownloadArchiveAsyncRaisesOnUnauthorized()
+    public async Task DownloadArchiveAsyncRaisesOnUnauthorized()
     {
         // Arrange
         using var httpTest = new HttpTest();
         httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
         httpTest.RespondWith(status: 401);
+        httpTest.RespondWith(status: 204);
         httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
         httpTest.RespondWith("payload", 200, new Dictionary<string, string> { ["Content-Type"] = "application/zip" });
+        httpTest.RespondWith(status: 204);
 
-        using var client = CreateClient();
+        await using (var client = CreateClient())
+        {
+            await client.DownloadArchiveAsync().ConfigureAwait(false);
+        }
 
-        // Act / Assert
-        Assert.DoesNotThrowAsync(async () => await client.DownloadArchiveAsync().ConfigureAwait(false));
         httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Post).Times(2);
+        httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Delete).Times(2);
         httpTest.ShouldHaveCalled("*/api/teleporter").WithVerb(HttpMethod.Get).Times(2);
     }
 
@@ -65,17 +75,35 @@ public class TeleporterClientTests
         using var httpTest = new HttpTest();
         httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
         httpTest.RespondWith("", 200); // upload response
+        httpTest.RespondWith(status: 204);
 
-        using var client = CreateClient();
-
-        // Act
-        await client.UploadArchiveAsync(new byte[] { 5, 6, 7 }).ConfigureAwait(false);
+        await using (var client = CreateClient())
+        {
+            await client.UploadArchiveAsync(new byte[] { 5, 6, 7 }).ConfigureAwait(false);
+        }
 
         // Assert
         httpTest.ShouldHaveCalled("*/api/teleporter")
             .WithVerb(HttpMethod.Post)
             .WithHeader("X-FTL-SID", "sid-token")
             .Times(1);
+        httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Delete).Times(1);
+    }
+
+    [Test]
+    public async Task DisposeAsyncDoesNotThrowWhenLogoutFails()
+    {
+        // Arrange
+        using var httpTest = new HttpTest();
+        httpTest.RespondWithJson(BuildAuthResponse("sid-token", "csrf-token"));
+        httpTest.RespondWith("payload", 200, new Dictionary<string, string> { ["Content-Type"] = "application/zip" });
+        httpTest.RespondWith(status: 500);
+
+        await using (var client = CreateClient())
+        {
+            await client.DownloadArchiveAsync().ConfigureAwait(false);
+        }
+        httpTest.ShouldHaveCalled("*/api/auth").WithVerb(HttpMethod.Delete).Times(1);
     }
 
     private static TeleporterClient CreateClient()
@@ -93,7 +121,7 @@ public class TeleporterClientTests
         return new TeleporterClient(options, sessionFactory, logger);
     }
 
-    private static object BuildAuthResponse(string sid, string? csrfToken)
+private static object BuildAuthResponse(string sid, string? csrfToken)
         => new
         {
             session = new
@@ -108,3 +136,5 @@ public class TeleporterClientTests
             took = 0.01
         };
 }
+
+#pragma warning restore CA2007

@@ -102,7 +102,7 @@ public sealed class SyncCoordinator : ISyncCoordinator
         }
         finally
         {
-            (client as IDisposable)?.Dispose();
+            await DisposeClientAsync(client).ConfigureAwait(false);
         }
     }
 
@@ -114,54 +114,69 @@ public sealed class SyncCoordinator : ISyncCoordinator
         CancellationToken cancellationToken)
     {
         var client = _clientFactory.CreateForSecondary(node);
-        byte[] archive;
         try
         {
-            archive = await client.DownloadArchiveAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            LogNodeDownloadFailedMessage(_logger, node.Name, ex);
-            (client as IDisposable)?.Dispose();
-            return new SyncNodeResult(node.Name, SyncStatus.Failed, Error: ex.Message);
-        }
+            byte[] archive;
+            try
+            {
+                archive = await client.DownloadArchiveAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                LogNodeDownloadFailedMessage(_logger, node.Name, ex);
+                return new SyncNodeResult(node.Name, SyncStatus.Failed, Error: ex.Message);
+            }
 
-        TeleporterDnsRecords current;
-        try
-        {
-            current = ExtractRecords(archive);
-        }
-        catch (InvalidDataException ex)
-        {
-            LogNodeParseFailedMessage(_logger, node.Name, ex);
-            (client as IDisposable)?.Dispose();
-            return new SyncNodeResult(node.Name, SyncStatus.Failed, Error: ex.Message);
-        }
+            TeleporterDnsRecords current;
+            try
+            {
+                current = ExtractRecords(archive);
+            }
+            catch (InvalidDataException ex)
+            {
+                LogNodeParseFailedMessage(_logger, node.Name, ex);
+                return new SyncNodeResult(node.Name, SyncStatus.Failed, Error: ex.Message);
+            }
 
-        var beforeCounts = new RecordCounts(current.Hosts.Count, current.CnameRecords.Count);
-        var afterCounts = new RecordCounts(desired.Hosts.Count, desired.CnameRecords.Count);
+            var beforeCounts = new RecordCounts(current.Hosts.Count, current.CnameRecords.Count);
+            var afterCounts = new RecordCounts(desired.Hosts.Count, desired.CnameRecords.Count);
 
-        if (dryRun)
-        {
-            LogNodeDryRunMessage(_logger, node.Name, beforeCounts.Hosts, afterCounts.Hosts, beforeCounts.Cnames, afterCounts.Cnames, null);
-            (client as IDisposable)?.Dispose();
-            return new SyncNodeResult(node.Name, SyncStatus.Skipped, beforeCounts, afterCounts);
-        }
+            if (dryRun)
+            {
+                LogNodeDryRunMessage(_logger, node.Name, beforeCounts.Hosts, afterCounts.Hosts, beforeCounts.Cnames, afterCounts.Cnames, null);
+                return new SyncNodeResult(node.Name, SyncStatus.Skipped, beforeCounts, afterCounts);
+            }
 
-        try
-        {
-            using var inputStream = new MemoryStream(archive, writable: false);
-            var processed = await _archiveProcessor.ReplaceDnsRecordsAsync(inputStream, desired, cancellationToken).ConfigureAwait(false);
-            await client.UploadArchiveAsync(processed, cancellationToken).ConfigureAwait(false);
-            LogNodeSuccessMessage(_logger, node.Name, beforeCounts.Hosts, afterCounts.Hosts, beforeCounts.Cnames, afterCounts.Cnames, null);
-            (client as IDisposable)?.Dispose();
-            return new SyncNodeResult(node.Name, SyncStatus.Success, beforeCounts, afterCounts);
+            try
+            {
+                using var inputStream = new MemoryStream(archive, writable: false);
+                var processed = await _archiveProcessor.ReplaceDnsRecordsAsync(inputStream, desired, cancellationToken).ConfigureAwait(false);
+                await client.UploadArchiveAsync(processed, cancellationToken).ConfigureAwait(false);
+                LogNodeSuccessMessage(_logger, node.Name, beforeCounts.Hosts, afterCounts.Hosts, beforeCounts.Cnames, afterCounts.Cnames, null);
+                return new SyncNodeResult(node.Name, SyncStatus.Success, beforeCounts, afterCounts);
+            }
+            catch (Exception ex)
+            {
+                LogNodeApplyFailedMessage(_logger, node.Name, ex);
+                return new SyncNodeResult(node.Name, SyncStatus.Failed, beforeCounts, Error: ex.Message);
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            LogNodeApplyFailedMessage(_logger, node.Name, ex);
-            (client as IDisposable)?.Dispose();
-            return new SyncNodeResult(node.Name, SyncStatus.Failed, beforeCounts, Error: ex.Message);
+            await DisposeClientAsync(client).ConfigureAwait(false);
+        }
+    }
+
+    private static async ValueTask DisposeClientAsync(ITeleporterClient client)
+    {
+        switch (client)
+        {
+            case IAsyncDisposable asyncDisposable:
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                break;
+            case IDisposable disposable:
+                disposable.Dispose();
+                break;
         }
     }
 
