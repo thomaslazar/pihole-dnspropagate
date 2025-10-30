@@ -205,7 +205,11 @@ public class TeleporterSandboxTests
             new TestOptionsMonitor<SecondaryPiHoleOptions>(secondaryOptions),
             loggerFactory.CreateLogger<SyncCoordinator>());
 
-        var manualCommand = new ManualSyncCommand(coordinator, syncState, loggerFactory.CreateLogger<ManualSyncCommand>());
+        var manualCommand = new ManualSyncCommand(
+            coordinator,
+            syncState,
+            new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions { DryRun = false }),
+            loggerFactory.CreateLogger<ManualSyncCommand>());
         var exitCode = await manualCommand.ExecuteAsync(null, new ManualSyncCommandSettings { DryRun = false }, CancellationToken.None).ConfigureAwait(false);
 
         // Assert

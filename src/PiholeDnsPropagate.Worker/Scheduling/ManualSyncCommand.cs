@@ -5,9 +5,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Spectre.Console.Cli;
 using PiholeDnsPropagate.Teleporter;
 using PiholeDnsPropagate.Worker.Services;
+using PiholeDnsPropagate.Options;
 using TeleporterSyncStatus = PiholeDnsPropagate.Teleporter.SyncStatus;
 
 namespace PiholeDnsPropagate.Worker.Scheduling;
@@ -33,12 +35,18 @@ public sealed class ManualSyncCommand : AsyncCommand<ManualSyncCommandSettings>
 
     private readonly ISyncCoordinator _coordinator;
     private readonly ISyncState _syncState;
+    private readonly IOptionsMonitor<SynchronizationOptions> _syncOptions;
     private readonly ILogger<ManualSyncCommand> _logger;
 
-    public ManualSyncCommand(ISyncCoordinator coordinator, ISyncState syncState, ILogger<ManualSyncCommand> logger)
+    public ManualSyncCommand(
+        ISyncCoordinator coordinator,
+        ISyncState syncState,
+        IOptionsMonitor<SynchronizationOptions> syncOptions,
+        ILogger<ManualSyncCommand> logger)
     {
         _coordinator = coordinator;
         _syncState = syncState;
+        _syncOptions = syncOptions ?? throw new ArgumentNullException(nameof(syncOptions));
         _logger = logger;
     }
 
@@ -55,7 +63,9 @@ public sealed class ManualSyncCommand : AsyncCommand<ManualSyncCommandSettings>
 
         try
         {
-            var result = await _coordinator.SynchronizeAsync(settings.DryRun, cancellationToken).ConfigureAwait(false);
+            var effectiveDryRun = settings.DryRun ?? _syncOptions.CurrentValue.DryRun;
+
+            var result = await _coordinator.SynchronizeAsync(effectiveDryRun, cancellationToken).ConfigureAwait(false);
             var allSuccess = result.Secondaries.All(s => s.Status != TeleporterSyncStatus.Failed);
             if (allSuccess)
             {
@@ -91,6 +101,6 @@ public sealed class ManualSyncCommand : AsyncCommand<ManualSyncCommandSettings>
 public sealed class ManualSyncCommandSettings : CommandSettings
 {
     [CommandOption("--dry-run")]
-    [DefaultValue(false)]
-    public bool DryRun { get; init; }
+    [DefaultValue(null)]
+    public bool? DryRun { get; init; }
 }

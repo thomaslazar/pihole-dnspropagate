@@ -3,11 +3,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using PiholeDnsPropagate.Options;
 using NSubstitute;
 using NUnit.Framework;
 using PiholeDnsPropagate.Teleporter;
 using PiholeDnsPropagate.Worker.Services;
 using PiholeDnsPropagate.Worker.Scheduling;
+using PiholeDnsPropagate.Tests.Teleporter.Fixtures;
 
 namespace PiholeDnsPropagate.Tests.Worker;
 
@@ -25,7 +27,11 @@ public sealed class ManualSyncCommandTests
         coordinator.SynchronizeAsync(false, default).Returns(new SyncResult(
             new SyncNodeResult("primary", SyncStatus.Success, new RecordCounts(1, 1)),
             Array.Empty<SyncNodeResult>()));
-        var command = new ManualSyncCommand(coordinator, syncState, NullLogger<ManualSyncCommand>.Instance);
+        var command = new ManualSyncCommand(
+            coordinator,
+            syncState,
+            new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions { DryRun = false }),
+            NullLogger<ManualSyncCommand>.Instance);
         var settings = new ManualSyncCommandSettings { DryRun = false };
 
         // Act
@@ -44,7 +50,11 @@ public sealed class ManualSyncCommandTests
         var coordinator = Substitute.For<ISyncCoordinator>();
         var syncState = Substitute.For<ISyncState>();
         syncState.TryMarkRunning().Returns(false);
-        var command = new ManualSyncCommand(coordinator, syncState, NullLogger<ManualSyncCommand>.Instance);
+        var command = new ManualSyncCommand(
+            coordinator,
+            syncState,
+            new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions()),
+            NullLogger<ManualSyncCommand>.Instance);
 
         // Act
         var exitCode = await command.ExecuteAsync(null, new ManualSyncCommandSettings(), CancellationToken.None).ConfigureAwait(false);
@@ -64,7 +74,11 @@ public sealed class ManualSyncCommandTests
         coordinator
             .SynchronizeAsync(false, Arg.Any<CancellationToken>())
             .Returns<Task<SyncResult>>(_ => throw new InvalidOperationException("boom"));
-        var command = new ManualSyncCommand(coordinator, syncState, NullLogger<ManualSyncCommand>.Instance);
+        var command = new ManualSyncCommand(
+            coordinator,
+            syncState,
+            new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions()),
+            NullLogger<ManualSyncCommand>.Instance);
 
         // Act
         var exitCode = await command.ExecuteAsync(null, new ManualSyncCommandSettings(), CancellationToken.None).ConfigureAwait(false);
@@ -89,7 +103,11 @@ public sealed class ManualSyncCommandTests
                 new SyncNodeResult("secondary", SyncStatus.Failed, new RecordCounts(1, 1), Error: "failure")
             });
         coordinator.SynchronizeAsync(false, Arg.Any<CancellationToken>()).Returns(Task.FromResult(syncResult));
-        var command = new ManualSyncCommand(coordinator, syncState, NullLogger<ManualSyncCommand>.Instance);
+        var command = new ManualSyncCommand(
+            coordinator,
+            syncState,
+            new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions()),
+            NullLogger<ManualSyncCommand>.Instance);
 
         // Act
         var exitCode = await command.ExecuteAsync(null, new ManualSyncCommandSettings(), CancellationToken.None).ConfigureAwait(false);
@@ -98,5 +116,30 @@ public sealed class ManualSyncCommandTests
         Assert.That(exitCode, Is.EqualTo(2));
         syncState.Received().MarkFailure(Arg.Any<DateTimeOffset>());
         syncState.Received().MarkIdle();
+    }
+
+    [Test]
+    public async Task ExecuteAsyncDefaultsToConfigurationDryRun()
+    {
+        // Arrange
+        var coordinator = Substitute.For<ISyncCoordinator>();
+        var syncState = Substitute.For<ISyncState>();
+        syncState.TryMarkRunning().Returns(true);
+        coordinator.SynchronizeAsync(true, Arg.Any<CancellationToken>()).Returns(new SyncResult(
+            new SyncNodeResult("primary", SyncStatus.Success, new RecordCounts(1, 1)),
+            Array.Empty<SyncNodeResult>()));
+
+        var command = new ManualSyncCommand(
+            coordinator,
+            syncState,
+            new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions { DryRun = true }),
+            NullLogger<ManualSyncCommand>.Instance);
+
+        // Act
+        var exitCode = await command.ExecuteAsync(null, new ManualSyncCommandSettings(), CancellationToken.None).ConfigureAwait(false);
+
+        // Assert
+        Assert.That(exitCode, Is.EqualTo(0));
+        await coordinator.Received(1).SynchronizeAsync(true, Arg.Any<CancellationToken>()).ConfigureAwait(false);
     }
 }

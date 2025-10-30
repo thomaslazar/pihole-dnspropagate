@@ -4,6 +4,7 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: pihole-dnspropagate:dev
+    container_name: pihole-dnspropagate-dev
     restart: unless-stopped
     env_file:
       - ../../.env.dev
