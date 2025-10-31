@@ -64,8 +64,7 @@ public sealed class ManualSyncCommand : AsyncCommand<ManualSyncCommandSettings>
         try
         {
             var effectiveDryRun = settings.DryRun ?? _syncOptions.CurrentValue.DryRun;
-
-            var result = await _coordinator.SynchronizeAsync(effectiveDryRun, cancellationToken).ConfigureAwait(false);
+            var result = await _coordinator.SynchronizeAsync(effectiveDryRun, settings.Force, cancellationToken).ConfigureAwait(false);
             var allSuccess = result.Secondaries.All(s => s.Status != TeleporterSyncStatus.Failed);
             if (allSuccess)
             {
@@ -103,4 +102,9 @@ public sealed class ManualSyncCommandSettings : CommandSettings
     [CommandOption("--dry-run")]
     [DefaultValue(null)]
     public bool? DryRun { get; init; }
+
+    [CommandOption("--force")]
+    [DefaultValue(false)]
+    [Description("Force synchronization even when no changes are detected.")]
+    public bool Force { get; init; }
 }

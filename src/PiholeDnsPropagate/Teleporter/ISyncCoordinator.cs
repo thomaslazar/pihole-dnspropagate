@@ -5,5 +5,5 @@ namespace PiholeDnsPropagate.Teleporter;
 
 public interface ISyncCoordinator
 {
-    Task<SyncResult> SynchronizeAsync(bool dryRun, CancellationToken cancellationToken = default);
+    Task<SyncResult> SynchronizeAsync(bool dryRun, bool force, CancellationToken cancellationToken = default);
 }

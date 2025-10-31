@@ -4,6 +4,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http;
+using Flurl.Http;
 using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 using PiholeDnsPropagate.Options;
@@ -195,6 +197,7 @@ public class TeleporterSandboxTests
         }
 
         await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        await WaitForTeleporterAsync(secondaryUrl!).ConfigureAwait(false);
 
         // Act
         var syncState = new SyncState();
@@ -215,12 +218,34 @@ public class TeleporterSandboxTests
         // Assert
         Assert.That(exitCode, Is.EqualTo(0));
 
+        await WaitForTeleporterAsync(secondaryUrl!).ConfigureAwait(false);
+
         secondaryClient = clientFactory.CreateForSecondary(secondaryOptions.Nodes.Single());
         try
         {
-            var archive = await secondaryClient.DownloadArchiveAsync().ConfigureAwait(false);
-            var records = ParseRecords(archive);
-            Assert.That(records.Hosts, Is.EquivalentTo(primaryRecords.Hosts));
+            const int maxAttempts = 3;
+            TeleporterDnsRecords? records = null;
+
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    var archive = await secondaryClient.DownloadArchiveAsync().ConfigureAwait(false);
+                    records = ParseRecords(archive);
+                    break;
+                }
+                catch (FlurlHttpException) when (attempt < maxAttempts)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                }
+                catch (HttpRequestException) when (attempt < maxAttempts)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                }
+            }
+
+            Assert.That(records, Is.Not.Null, "Secondary archive should be retrievable after synchronization.");
+            Assert.That(records!.Hosts, Is.EquivalentTo(primaryRecords.Hosts));
             Assert.That(records.CnameRecords, Is.EquivalentTo(primaryRecords.CnameRecords));
         }
         finally

@@ -43,7 +43,7 @@ To trigger an immediate synchronization without waiting for the scheduler:
 docker compose -f deploy/compose/docker-compose.dev.yaml run --rm pihole-dnspropagate sync-now
 ```
 
-When `--dry-run` is omitted, the manual command inherits the `SYNC_DRY_RUN` value from the environment. Pass `--dry-run` (or `--dry-run:false`) explicitly to override the configured behaviour for a single invocation.
+When `--dry-run` is omitted, the manual command inherits the `SYNC_DRY_RUN` value from the environment. Pass `--dry-run` (or `--dry-run:false`) explicitly to override the configured behaviour for a single invocation. Use `--force` to bypass change detection and push updates even if no differences are detected. Run `docker compose ... sync-now --help` to view all available options.
 
 For publishing, tag the image appropriately (e.g., `ghcr.io/<org>/pihole-dnspropagate:<tag>`) and push to your registry of choice.
 

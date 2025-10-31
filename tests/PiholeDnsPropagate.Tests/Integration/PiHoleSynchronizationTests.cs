@@ -118,7 +118,7 @@ public sealed class PiHoleSynchronizationTests
             NullLogger<SyncCoordinator>.Instance);
 
         // Act
-        var result = await coordinator.SynchronizeAsync(false, cts.Token).ConfigureAwait(false);
+        var result = await coordinator.SynchronizeAsync(false, false, cts.Token).ConfigureAwait(false);
 
         // Assert
         Assert.That(result.Primary.Status, Is.EqualTo(SyncStatus.Success));

@@ -50,7 +50,7 @@ public class SyncCoordinatorTests
             new ListLogger<SyncCoordinator>());
 
         // Act
-        var result = await coordinator.SynchronizeAsync(dryRun: true).ConfigureAwait(false);
+        var result = await coordinator.SynchronizeAsync(dryRun: true, force: false).ConfigureAwait(false);
 
         // Assert
         Assert.That(result.Secondaries.Single().Status, Is.EqualTo(SyncStatus.Skipped));
@@ -94,7 +94,7 @@ public class SyncCoordinatorTests
             logger);
 
         // Act
-        var result = await coordinator.SynchronizeAsync(dryRun: false).ConfigureAwait(false);
+        var result = await coordinator.SynchronizeAsync(dryRun: false, force: false).ConfigureAwait(false);
 
         // Assert
         var failingResult = result.Secondaries.Single(r => r.NodeName == "failing");
@@ -104,6 +104,84 @@ public class SyncCoordinatorTests
         Assert.That(successResult.Status, Is.EqualTo(SyncStatus.Success));
         Assert.That(successClient.UploadInvoked, Is.True);
         Assert.That(logger.Entries.Any(e => e.Message.Contains("sync.node.apply_failed", StringComparison.Ordinal)), Is.True);
+    }
+
+    [Test]
+    public async Task SynchronizeAsyncSkipsWhenRecordsUnchanged()
+    {
+        // Arrange
+        var archive = BuildArchive(new[] { "10.0.0.5 same.local" }, new[] { "alias.same.local,same.local" });
+
+        var primaryOptions = new PrimaryPiHoleOptions { BaseUrl = new Uri("http://primary"), Password = "secret" };
+        var secondaryOptions = new SecondaryPiHoleOptions
+        {
+            Nodes =
+            {
+                new SecondaryPiHoleNodeOptions { Name = "secondary", BaseUrl = new Uri("http://secondary"), Password = "secret" }
+            }
+        };
+
+        using var primaryClient = new FakeTeleporterClient(archive);
+        using var secondaryClient = new FakeTeleporterClient(archive);
+
+        var factory = Substitute.For<ITeleporterClientFactory>();
+        factory.CreateForPrimary(Arg.Any<PrimaryPiHoleOptions>()).Returns(primaryClient);
+        factory.CreateForSecondary(Arg.Any<SecondaryPiHoleNodeOptions>()).Returns(secondaryClient);
+
+        var archiveProcessor = new TeleporterArchiveProcessor();
+        var coordinator = new SyncCoordinator(
+            factory,
+            archiveProcessor,
+            new TestOptionsMonitor<PrimaryPiHoleOptions>(primaryOptions),
+            new TestOptionsMonitor<SecondaryPiHoleOptions>(secondaryOptions),
+            new ListLogger<SyncCoordinator>());
+
+        // Act
+        var result = await coordinator.SynchronizeAsync(dryRun: false, force: false).ConfigureAwait(false);
+
+        // Assert
+        var nodeResult = result.Secondaries.Single();
+        Assert.That(nodeResult.Status, Is.EqualTo(SyncStatus.Skipped));
+        Assert.That(secondaryClient.UploadInvoked, Is.False);
+    }
+
+    [Test]
+    public async Task SynchronizeAsyncForceUploadsEvenWithoutChanges()
+    {
+        // Arrange
+        var archive = BuildArchive(new[] { "10.0.0.5 same.local" }, Array.Empty<string>());
+
+        var primaryOptions = new PrimaryPiHoleOptions { BaseUrl = new Uri("http://primary"), Password = "secret" };
+        var secondaryOptions = new SecondaryPiHoleOptions
+        {
+            Nodes =
+            {
+                new SecondaryPiHoleNodeOptions { Name = "secondary", BaseUrl = new Uri("http://secondary"), Password = "secret" }
+            }
+        };
+
+        using var primaryClient = new FakeTeleporterClient(archive);
+        using var secondaryClient = new FakeTeleporterClient(archive);
+
+        var factory = Substitute.For<ITeleporterClientFactory>();
+        factory.CreateForPrimary(Arg.Any<PrimaryPiHoleOptions>()).Returns(primaryClient);
+        factory.CreateForSecondary(Arg.Any<SecondaryPiHoleNodeOptions>()).Returns(secondaryClient);
+
+        var archiveProcessor = new TeleporterArchiveProcessor();
+        var coordinator = new SyncCoordinator(
+            factory,
+            archiveProcessor,
+            new TestOptionsMonitor<PrimaryPiHoleOptions>(primaryOptions),
+            new TestOptionsMonitor<SecondaryPiHoleOptions>(secondaryOptions),
+            new ListLogger<SyncCoordinator>());
+
+        // Act
+        var result = await coordinator.SynchronizeAsync(dryRun: false, force: true).ConfigureAwait(false);
+
+        // Assert
+        var nodeResult = result.Secondaries.Single();
+        Assert.That(nodeResult.Status, Is.EqualTo(SyncStatus.Success));
+        Assert.That(secondaryClient.UploadInvoked, Is.True);
     }
 
     private static byte[] BuildArchive(IReadOnlyList<string> hosts, IReadOnlyList<string> cnames)

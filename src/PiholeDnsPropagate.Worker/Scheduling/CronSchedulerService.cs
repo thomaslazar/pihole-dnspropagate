@@ -88,7 +88,7 @@ internal sealed class CronSchedulerService : BackgroundService
 
         try
         {
-            var result = await _coordinator.SynchronizeAsync(_syncOptions.CurrentValue.DryRun, stoppingToken).ConfigureAwait(false);
+            var result = await _coordinator.SynchronizeAsync(_syncOptions.CurrentValue.DryRun, force: false, stoppingToken).ConfigureAwait(false);
             var allSuccess = result.Secondaries.All(s => s.Status != TeleporterSyncStatus.Failed);
             if (allSuccess)
             {

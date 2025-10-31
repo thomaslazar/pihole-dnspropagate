@@ -23,7 +23,7 @@ public sealed class CronSchedulerServiceTests
         // Arrange
         var coordinator = Substitute.For<ISyncCoordinator>();
         coordinator
-            .SynchronizeAsync(false, Arg.Any<CancellationToken>())
+            .SynchronizeAsync(false, false, Arg.Any<CancellationToken>())
             .Returns(new SyncResult(new SyncNodeResult("primary", SyncStatus.Success, new RecordCounts(0, 0)), Array.Empty<SyncNodeResult>()));
 
         var options = new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions
@@ -41,7 +41,7 @@ public sealed class CronSchedulerServiceTests
         await scheduler.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
         // Assert
-        await coordinator.ReceivedWithAnyArgs().SynchronizeAsync(default, default).ConfigureAwait(false);
+        await coordinator.ReceivedWithAnyArgs().SynchronizeAsync(default, default, default).ConfigureAwait(false);
     }
 
     [Test]
@@ -50,7 +50,7 @@ public sealed class CronSchedulerServiceTests
         // Arrange
         var coordinator = Substitute.For<ISyncCoordinator>();
         coordinator
-            .SynchronizeAsync(false, Arg.Any<CancellationToken>())
+            .SynchronizeAsync(false, false, Arg.Any<CancellationToken>())
             .Returns<Task<SyncResult>>(_ => throw new InvalidOperationException("boom"));
 
         var options = new TestOptionsMonitor<SynchronizationOptions>(new SynchronizationOptions
@@ -69,7 +69,7 @@ public sealed class CronSchedulerServiceTests
 
         // Assert
         Assert.That(syncState.CurrentStatus, Is.EqualTo(SyncRunStatus.Failure));
-        await coordinator.ReceivedWithAnyArgs().SynchronizeAsync(default, default).ConfigureAwait(false);
+        await coordinator.ReceivedWithAnyArgs().SynchronizeAsync(default, default, default).ConfigureAwait(false);
     }
 
     [Test]
@@ -92,7 +92,7 @@ public sealed class CronSchedulerServiceTests
         await scheduler.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
         // Assert
-        await coordinator.DidNotReceiveWithAnyArgs().SynchronizeAsync(default, default).ConfigureAwait(false);
+        await coordinator.DidNotReceiveWithAnyArgs().SynchronizeAsync(default, default, default).ConfigureAwait(false);
         syncState.DidNotReceive().MarkIdle();
     }
 }

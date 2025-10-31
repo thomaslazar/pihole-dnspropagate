@@ -8,10 +8,18 @@ Keep runtime logic in `src/` (e.g., `src/DnsPropagator`). Arrange HTTP or schedu
 
 ## Coding Style & Naming Conventions
 Target .NET 9 and enable nullable reference types. Use four-space indentation, PascalCase for classes, camelCase for locals, and ALL_CAPS for environment variable constants. Keep each project with its own `Directory.Build.props` for analyzer configuration. Run `dotnet format` before opening a PR; the command enforces `csharp_style` rules and removes unused imports. Favor async APIs when interacting with the Pi-hole endpoints and wrap external calls in `IPiholeClient` abstractions for testing.
+- When adding structured logging, treat EventId values as stable API surface. Never renumber existing IDs; append new IDs by choosing the next unused integer.
 
 ## Testing Guidelines
 Adopt NUnit with FluentAssertions or built-in constraints, and use NSubstitute for mocking dependencies. Name test projects `<ProjectName>.Tests` and test files after the class under test (e.g., `DnsSyncServiceTests.cs`). Cover every public service and client method with at least one happy-path and one failure-path test; critical sync logic should reach 80% branch coverage. Exercise API integrations via test doubles that mimic Pi-hole responses; place reusable fixtures in `tests/Common`.
 - Structure tests using the Arrange–Act–Assert pattern (annotate each section with comments `// Arrange`, `// Act`, `// Assert`).
+
+## Integration Testing Workflow
+- Follow `docs/pihole-sandbox.md` when bringing up the primary/secondary Pi-hole sandbox.
+- Run sandbox commands with `sudo` inside the devcontainer so Docker can access `/var/run/docker.sock`.
+- After `sandbox.sh up`, capture container IPs with `sudo docker inspect` and export `SANDBOX_PIHOLE_URL`/`SANDBOX_PIHOLE_SECONDARY_URL` using those addresses (requests to `127.0.0.1` fail from the devcontainer).
+- Explicit integration tests stay skipped by default; target them with `dotnet test --filter FullyQualifiedName=...` once the sandbox is running.
+- Tear the sandbox down with `sudo ./deploy/pihole-sandbox/sandbox.sh down` when finished to keep future runs clean.
 
 ## Commit & Pull Request Guidelines
 Write commits using the template `type(scope): summary`, followed by `Changes:` and `Validation:` sections listing granular edits and commands run. Acceptable types: `feat`, `fix`, `chore`, `docs`, `test`, `build`, `refactor`, `perf`, `ci`, `revert`. Keep summaries ≤72 characters, imperative, and scope optional but descriptive (`sync`, `teleporter-client`). Reference related issues in the `Refs:` line (`Refs #12`) when applicable. PRs need a concise summary, validation evidence (command output or screenshots for tooling), and a checklist for secrets: confirm API keys are mocked and configs exclude real tokens. Request review from @maintainers once CI is green and tag new configuration knobs in the release notes draft.

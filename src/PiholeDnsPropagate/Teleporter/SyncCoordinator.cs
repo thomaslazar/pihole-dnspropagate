@@ -25,6 +25,10 @@ public sealed class SyncCoordinator : ISyncCoordinator
         LoggerMessage.Define<string>(LogLevel.Error, new EventId(6002, nameof(ProcessSecondaryAsync)),
             "sync.node.parse_failed {Node}");
 
+    private static readonly Action<ILogger, string, Exception?> LogNodeNoChangeMessage =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(6007, nameof(ProcessSecondaryAsync)),
+            "sync.node.no_change {Node}");
+
     private static readonly Action<ILogger, string, int, int, int, int, Exception?> LogNodeDryRunMessage =
         LoggerMessage.Define<string, int, int, int, int>(LogLevel.Information, new EventId(6003, nameof(ProcessSecondaryAsync)),
             "sync.node.dry_run {Node} {BeforeHosts} {AfterHosts} {BeforeCnames} {AfterCnames}");
@@ -66,7 +70,7 @@ public sealed class SyncCoordinator : ISyncCoordinator
         _logger = logger;
     }
 
-    public async Task<SyncResult> SynchronizeAsync(bool dryRun, CancellationToken cancellationToken = default)
+    public async Task<SyncResult> SynchronizeAsync(bool dryRun, bool force, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -83,7 +87,7 @@ public sealed class SyncCoordinator : ISyncCoordinator
         foreach (var node in secondaryOpts.Nodes)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var result = await ProcessSecondaryAsync(node, primaryRecords, dryRun, cancellationToken).ConfigureAwait(false);
+            var result = await ProcessSecondaryAsync(node, primaryRecords, dryRun, force, cancellationToken).ConfigureAwait(false);
             secondaryResults.Add(result);
         }
 
@@ -111,6 +115,7 @@ public sealed class SyncCoordinator : ISyncCoordinator
         SecondaryPiHoleNodeOptions node,
         TeleporterDnsRecords desired,
         bool dryRun,
+        bool force,
         CancellationToken cancellationToken)
     {
         var client = _clientFactory.CreateForSecondary(node);
@@ -138,14 +143,21 @@ public sealed class SyncCoordinator : ISyncCoordinator
                 return new SyncNodeResult(node.Name, SyncStatus.Failed, Error: ex.Message);
             }
 
-            var beforeCounts = new RecordCounts(current.Hosts.Count, current.CnameRecords.Count);
-            var afterCounts = new RecordCounts(desired.Hosts.Count, desired.CnameRecords.Count);
+        var beforeCounts = new RecordCounts(current.Hosts.Count, current.CnameRecords.Count);
+        var afterCounts = new RecordCounts(desired.Hosts.Count, desired.CnameRecords.Count);
 
-            if (dryRun)
-            {
-                LogNodeDryRunMessage(_logger, node.Name, beforeCounts.Hosts, afterCounts.Hosts, beforeCounts.Cnames, afterCounts.Cnames, null);
-                return new SyncNodeResult(node.Name, SyncStatus.Skipped, beforeCounts, afterCounts);
-            }
+        var hasChanges = !current.ContentEquals(desired);
+        if (!hasChanges && !force)
+        {
+            LogNodeNoChangeMessage(_logger, node.Name, null);
+            return new SyncNodeResult(node.Name, SyncStatus.Skipped, beforeCounts, afterCounts);
+        }
+
+        if (dryRun)
+        {
+            LogNodeDryRunMessage(_logger, node.Name, beforeCounts.Hosts, afterCounts.Hosts, beforeCounts.Cnames, afterCounts.Cnames, null);
+            return new SyncNodeResult(node.Name, SyncStatus.Skipped, beforeCounts, afterCounts);
+        }
 
             try
             {

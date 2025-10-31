@@ -16,6 +16,7 @@ Existing sync tools (like *Nebula Sync*) replicate entire Pi-hole configurations
 - 🔄 **Automatic propagation** of local DNS and CNAME records between Pi-holes.  
 - 🧭 **Source-defined sync** – choose one “primary” Pi-hole as the authoritative source.  
 - 🕒 **Periodic updates** – scheduler supports fixed intervals or cron expressions.  
+- ♻️ **Diff-aware sync** – secondaries are updated only when DNS/CNAME changes are detected.  
 - 🔧 **Manual sync CLI** – trigger `sync-now` from the container without waiting for the scheduler.  
 - 🧰 **API-based updates** – no file-level or full-config syncing required.  
 - 📈 **Health endpoint** – JSON status exposed on `/healthz` for readiness checks.  
