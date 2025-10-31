@@ -1,5 +1,5 @@
 # 🧩 pihole-dnspropagate
-[![CI](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/ci.yml/badge.svg)](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/ci.yml)
+[![PR Validation](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/pr-validation.yml/badge.svg)](https://github.com/thomaslazar/pihole-dnspropagate/actions/workflows/pr-validation.yml)
 
 **Synchronize Pi-hole local DNS and CNAME records across multiple Pi-hole instances — nothing more, nothing less.**
 
