@@ -1,0 +1,19 @@
+services:
+  pihole-dnspropagate:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: pihole-dnspropagate:dev
+    container_name: pihole-dnspropagate-dev
+    restart: unless-stopped
+    env_file:
+      - ../../.env.dev
+    networks:
+      - pihole-sync
+    ports:
+      - "8080:8080"
+
+networks:
+  pihole-sync:
+    name: pihole-sync
+    driver: bridge

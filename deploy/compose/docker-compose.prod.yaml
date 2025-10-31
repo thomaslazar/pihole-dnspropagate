@@ -1,0 +1,16 @@
+services:
+  pihole-dnspropagate:
+    image: ghcr.io/thomaslazar/pihole-dnspropagate:latest
+    container_name: pihole-dnspropagate
+    restart: unless-stopped
+    env_file:
+      - ../../.env.dev
+    networks:
+      - pihole-sync
+    ports:
+      - "8080:8080"
+
+networks:
+  pihole-sync:
+    name: pihole-sync
+    driver: bridge

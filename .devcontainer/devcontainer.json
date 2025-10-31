@@ -1,0 +1,53 @@
+{
+	"name": "C# (.NET)",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/dotnet:2": {
+			"version": "9.0"
+		},
+		"ghcr.io/jsburckhardt/devcontainer-features/codex:1": {}
+	},
+	"containerEnv": {
+		"CODEX_HOME": "${containerWorkspaceFolder}/.codex"
+	},
+	"runArgs": [
+		"--init",
+		"--privileged",
+		"-v",
+		"/var/run/docker.sock:/var/run/docker.sock",
+		"--security-opt",
+		"no-new-privileges=false"
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-dotnettools.csdevkit",
+				"ms-dotnettools.csharp",
+				"ms-dotnettools.vscode-dotnet-runtime",
+				"ms-dotnettools.dotnet-interactive-vscode",
+				"codezombiech.gitignore",
+				"dbaeumer.vscode-eslint",
+				"donjayamanne.githistory",
+				"eamodio.gitlens",
+				"fabiospampinato.vscode-diff",
+				"github.copilot",
+				"github.copilot-chat",
+				"github.vscode-pull-request-github",
+				"mhutchie.git-graph",
+				"openai.chatgpt"
+			],
+			"settings": {
+				"dotnet.server.useOmnisharp": false,
+				"dotnet.formatting.enable": true,
+				"editor.formatOnSave": true
+			}
+		}
+	},
+	"postCreateCommand": [
+		"dotnet",
+		"--info"
+	]
+}
