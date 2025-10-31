@@ -66,6 +66,10 @@ flowchart LR
 5. Draft GitHub Release notes summarising changes, linking backlog items, and including artifact references.
 6. If a hotfix originated from `main`, merge the release branch back into `develop` to keep histories aligned.
 
+GitHub Actions automation:
+- The `PR Validation` workflow runs on every PR to `develop` or `main`, ensuring build/test coverage before merge.
+- When new code lands on `main`, the `Release` workflow reads `VERSION`, tags the commit as `vX.Y.Z`, and drafts a GitHub Release with generated notes. If the tag already exists, the workflow exits with no changes.
+
 ### Rollback Strategy
 
 - **Before announcing the release**: If CI or smoke tests fail, revert the merge commit on `main`, delete the tag (e.g., `git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`), and reopen the release PR after fixes.
