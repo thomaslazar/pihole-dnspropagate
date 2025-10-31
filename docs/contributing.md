@@ -171,7 +171,8 @@ gitGraph
 - Keep your fork up to date by rebasing on `upstream/develop` before opening a PR.
 - Target `develop` in PRs unless you are coordinating a hotfix with the maintainers.
 - Run `dotnet test` (and sandbox integration tests if relevant) before submitting.
-- GitHub Actions will run the required checks on the PR; resolve any issues before requesting review.
+- GitHub Actions will run the required `build` job on every PR; resolve failures before requesting review.
+- Branch protection requires at least one maintainer approval on `main` before merge; expect review feedback.
 
 ## Git & Backlog Workflow
 - Backlog items live under `plan/backlog/` using the template `template.md`.
