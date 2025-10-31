@@ -196,6 +196,8 @@ gitGraph
    docker buildx build --platform linux/amd64 -t ghcr.io/thomaslazar/pihole-dnspropagate:<tag> --push .
    ```
 4. Update changelog / release notes with notable changes.
-5. Merging into `main` will trigger `.github/workflows/release.yml` to tag the commit and draft a GitHub release; update release notes with any manual artifacts (e.g., Docker image digests).
+5. Merging into `main` triggers `.github/workflows/release.yml`, which builds/pushes `ghcr.io/thomaslazar/pihole-dnspropagate` images (`<version>` + `latest`), tags the commit, and drafts a GitHub release including the image digest summary.
+6. For release-candidate images, run `.github/workflows/manual-image-build.yml` via **Actions → Manual Image Build → Run workflow**, specify a tag (e.g., `1.0.0-rc.1`), and publish without disturbing `latest`.
+7. If automation fails, follow the manual fallback in `docs/release-process.md` (log in to GHCR, push tags, edit release notes) before announcing the release.
 
 Happy hacking! If you run into issues, open an issue or ping the maintainers.
