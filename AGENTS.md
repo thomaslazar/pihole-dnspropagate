@@ -65,6 +65,17 @@ gitGraph
 - `main` enforces branch protection: PRs must pass the `build` workflow and receive at least one maintainer approval; `develop` requires the same `build` check. Coordinate with maintainers if settings need adjustments.
 - Workflows: `PR Validation` runs build/tests on every PR; `Release` (push to `main`) builds + pushes GHCR images, tags using `VERSION`, and drafts a GitHub Release with digests. Use `Manual Image Build` (workflow_dispatch) for RC or ad-hoc tags that must not update `latest`.
 
+## Elevated Commands & Commits
+- Inside the devcontainer, run Docker commands with `sudo` (for example `sudo docker build …`, `sudo docker compose …`). Scripts should do the same to avoid socket permission errors.
+- Configure Git identity from `.codex/committer.env` before committing:
+  ```bash
+  source .codex/committer.env
+  git config user.name "$GIT_AUTHOR_NAME"
+  git config user.email "$GIT_AUTHOR_EMAIL"
+  ```
+- Avoid `git commit -m`. Instead, write commit messages to a file (or use `git commit -F`) so backticks or Markdown aren’t mangled. After each commit, run `git log -1 --pretty=medium`; if the `Changes:`/`Validation:` sections look off, amend immediately.
+- Before staging, ensure backlog tasks have their work items / acceptance criteria checked and the file moved to `/plan/backlog/done/` when completed.
+
 ## Integration Testing Workflow
 - Follow `docs/pihole-sandbox.md` when bringing up the primary/secondary Pi-hole sandbox.
 - Run sandbox commands with `sudo` inside the devcontainer so Docker can access `/var/run/docker.sock`.

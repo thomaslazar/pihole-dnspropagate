@@ -183,8 +183,8 @@ gitGraph
 
 ## Tooling & Automation
 - **PR Validation:** `.github/workflows/pr-validation.yml` runs build/tests/coverage on every PR (forks included) so branch protection checks pass.
-- **Release:** `.github/workflows/release.yml` tags `main` as `vX.Y.Z` using the `VERSION` file and drafts GitHub Releases with generated notes.
-- Future work includes automating Docker image publishing (see roadmap).
+- **Release:** `.github/workflows/release.yml` tags `main` as `vX.Y.Z`, builds images, and drafts GitHub Releases with digests.
+- **Manual Image Build:** `.github/workflows/manual-image-build.yml` publishes release-candidate or ad-hoc tags without updating `latest`.
 - Dev container installs OpenAI Codex CLI, GitKraken CLI, and sets up MCP servers; manual usage is described in `AGENTS.md`.
 
 ## Release Checklist

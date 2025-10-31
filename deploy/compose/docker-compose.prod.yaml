@@ -12,4 +12,5 @@ services:
 
 networks:
   pihole-sync:
-    external: true
+    name: pihole-sync
+    driver: bridge
