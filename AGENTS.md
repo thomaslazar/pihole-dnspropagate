@@ -63,7 +63,7 @@ gitGraph
 - Hotfix branches fork from `main`, are reviewed, then merged to both `main` and `develop`.
 - Contributors working from forks should keep their fork in sync (`git fetch upstream && git rebase upstream/develop`), branch from `develop`, and open PRs back to `develop` unless maintainers request a hotfix. Run `dotnet test` (and any relevant integration suites) before marking a PR ready.
 - `main` enforces branch protection: PRs must pass the `build` workflow and receive at least one maintainer approval; `develop` requires the same `build` check. Coordinate with maintainers if settings need adjustments.
-- Workflows: `PR Validation` runs build/tests on every PR; `Release` (push to `main`) tags the commit using `VERSION` and drafts a GitHub Release.
+- Workflows: `PR Validation` runs build/tests on every PR; `Release` (push to `main`) builds + pushes GHCR images, tags using `VERSION`, and drafts a GitHub Release with digests. Use `Manual Image Build` (workflow_dispatch) for RC or ad-hoc tags that must not update `latest`.
 
 ## Integration Testing Workflow
 - Follow `docs/pihole-sandbox.md` when bringing up the primary/secondary Pi-hole sandbox.

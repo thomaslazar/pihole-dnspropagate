@@ -68,7 +68,22 @@ flowchart LR
 
 GitHub Actions automation:
 - The `PR Validation` workflow runs on every PR to `develop` or `main`, ensuring build/test coverage before merge.
-- When new code lands on `main`, the `Release` workflow reads `VERSION`, tags the commit as `vX.Y.Z`, and drafts a GitHub Release with generated notes. If the tag already exists, the workflow exits with no changes.
+- When new code lands on `main`, the `Release` workflow reads `VERSION`, builds and pushes container images, tags the commit as `vX.Y.Z`, and drafts a GitHub Release with generated notes plus image digests. If the tag already exists, the workflow exits with no changes.
+
+## GHCR Publishing
+
+The `Release` workflow publishes `ghcr.io/thomaslazar/pihole-dnspropagate` images using the built-in `GITHUB_TOKEN` (scoped with `packages: write`).
+
+1. Maintainers verify that **Settings → Packages → Distribution management** allows `GITHUB_TOKEN` to publish to GHCR.
+2. Ensure the first release run creates the image repository; set visibility (public/private) as desired in GHCR UI.
+3. The workflow pushes two tags on every release:
+   - `${VERSION}` (e.g., `1.0.0`).
+   - `latest`.
+4. The GitHub Release notes include the image digest so consumers can pin exact artifacts.
+
+Manual workflows:
+- Use the **Manual Image Build** workflow (`.github/workflows/manual-image-build.yml`) when you need a release candidate or ad-hoc image without touching `latest`. Provide a unique tag (for example `1.0.0-rc.1` or `dev-<date>`); the workflow builds and pushes only that tag.
+- If automation is offline, log in locally with `echo $TOKEN | docker login ghcr.io -u USERNAME --password-stdin`, build, and push both tags, then update the release notes manually.
 
 ### Rollback Strategy
 
