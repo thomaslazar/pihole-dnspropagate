@@ -14,6 +14,55 @@ Target .NET 9 and enable nullable reference types. Use four-space indentation, P
 Adopt NUnit with FluentAssertions or built-in constraints, and use NSubstitute for mocking dependencies. Name test projects `<ProjectName>.Tests` and test files after the class under test (e.g., `DnsSyncServiceTests.cs`). Cover every public service and client method with at least one happy-path and one failure-path test; critical sync logic should reach 80% branch coverage. Exercise API integrations via test doubles that mimic Pi-hole responses; place reusable fixtures in `tests/Common`.
 - Structure tests using the Arrange–Act–Assert pattern (annotate each section with comments `// Arrange`, `// Act`, `// Assert`).
 
+## Branching & PR Workflow
+```mermaid
+gitGraph
+    commit id: "Initial" tag: "v1.0.0"
+
+    branch develop
+    checkout develop
+    commit id: "start sprint"
+
+    branch feature/PIDP-020-sync order: 1
+    commit id: "feature work"
+    checkout develop
+    merge feature/PIDP-020-sync
+
+    branch bugfix/PIDP-019-dns order: 2
+    commit id: "bugfix fix"
+    checkout develop
+    merge bugfix/PIDP-019-dns
+
+    commit id: "staging ready"
+
+    branch release/1.1.0 order: 3
+    checkout release/1.1.0
+    commit id: "prepare RC" type: REVERSE tag: "v1.1.0-rc.1"
+
+    checkout develop
+    merge release/1.1.0
+
+    checkout main
+    merge release/1.1.0 tag: "v1.1.0"
+
+    checkout develop
+    commit id: "set next version"
+
+    branch hotfix/critical order: 4
+    checkout hotfix/critical
+    commit id: "hotfix patch" type: HIGHLIGHT
+
+    checkout main
+    merge hotfix/critical tag: "v1.1.1"
+
+    checkout develop
+    merge hotfix/critical
+```
+- `main` is production-only. Update it through reviewed release PRs coming from `develop` (or coordinated hotfix branches).
+- `develop` is the integration branch. Start feature and bugfix branches from here; use prefixes `feature/` or `bugfix/` with the related PIDP identifier when possible.
+- Hotfix branches fork from `main`, are reviewed, then merged to both `main` and `develop`.
+- Contributors working from forks should keep their fork in sync (`git fetch upstream && git rebase upstream/develop`), branch from `develop`, and open PRs back to `develop` unless maintainers request a hotfix. Run `dotnet test` (and any relevant integration suites) before marking a PR ready.
+
 ## Integration Testing Workflow
 - Follow `docs/pihole-sandbox.md` when bringing up the primary/secondary Pi-hole sandbox.
 - Run sandbox commands with `sudo` inside the devcontainer so Docker can access `/var/run/docker.sock`.

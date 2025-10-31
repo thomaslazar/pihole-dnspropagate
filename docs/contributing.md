@@ -113,6 +113,66 @@ When running the integration suite, ensure the Docker daemon is accessible; othe
 - Tests follow Arrange/Act/Assert structure with explicit comments (See `README`/AGENTS.md note).
 - Keep manual logging using `LoggerMessage` to satisfy CA1848.
 
+## Branching Model
+
+We use a lightweight GitFlow-inspired model to keep day-to-day development moving while protecting production quality.
+
+```mermaid
+gitGraph
+    commit id: "Initial" tag: "v1.0.0"
+
+    branch develop
+    checkout develop
+    commit id: "start sprint"
+
+    branch feature/PIDP-020-sync order: 1
+    commit id: "feature work"
+    checkout develop
+    merge feature/PIDP-020-sync
+
+    branch bugfix/PIDP-019-dns order: 2
+    commit id: "bugfix fix"
+    checkout develop
+    merge bugfix/PIDP-019-dns
+
+    commit id: "staging ready"
+
+    branch release/1.1.0 order: 3
+    checkout release/1.1.0
+    commit id: "prepare RC" type: REVERSE tag: "v1.1.0-rc.1"
+
+    checkout develop
+    merge release/1.1.0
+
+    checkout main
+    merge release/1.1.0 tag: "v1.1.0"
+
+    checkout develop
+    commit id: "set next version"
+
+    branch hotfix/critical order: 4
+    checkout hotfix/critical
+    commit id: "hotfix patch" type: HIGHLIGHT
+
+    checkout main
+    merge hotfix/critical tag: "v1.1.1"
+
+    checkout develop
+    merge hotfix/critical
+```
+
+- **main** – production branch. Only updated through reviewed release PRs. Every commit here must be shippable.
+- **develop** – integration branch. All regular work merges here first.
+- **feature/** and **bugfix/** branches – short-lived branches cut from `develop` (forks should use the same prefixes). Merge back via PR once tests pass.
+- **hotfix/** branches – emergency patches forked from `main`, merged back into both `main` and `develop` after review.
+
+### Working From Forks
+- Create a feature/bugfix branch on your fork (e.g., `feature/PIDP-020-new-sync-mode`).
+- Keep your fork up to date by rebasing on `upstream/develop` before opening a PR.
+- Target `develop` in PRs unless you are coordinating a hotfix with the maintainers.
+- Run `dotnet test` (and sandbox integration tests if relevant) before submitting.
+- GitHub Actions will run the required checks on the PR; resolve any issues before requesting review.
+
 ## Git & Backlog Workflow
 - Backlog items live under `plan/backlog/` using the template `template.md`.
 - Completed items move to `plan/backlog/done/` with status set to `Completed`.
