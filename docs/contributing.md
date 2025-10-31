@@ -184,7 +184,6 @@ gitGraph
 ## Tooling & Automation
 - **PR Validation:** `.github/workflows/pr-validation.yml` runs build/tests/coverage on every PR (forks included) so branch protection checks pass.
 - **Release:** `.github/workflows/release.yml` tags `main` as `vX.Y.Z` using the `VERSION` file and drafts GitHub Releases with generated notes.
-- **CI (legacy compatibility):** `.github/workflows/ci.yml` executes the same build/tests when the validation workflow finishes for `main`.
 - Future work includes automating Docker image publishing (see roadmap).
 - Dev container installs OpenAI Codex CLI, GitKraken CLI, and sets up MCP servers; manual usage is described in `AGENTS.md`.
 
