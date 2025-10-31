@@ -182,18 +182,20 @@ gitGraph
 - Large features should reference backlog IDs in commit messages or PR descriptions.
 
 ## Tooling & Automation
-- **CI:** `.github/workflows/ci.yml` runs restore, build, tests, and coverage threshold enforcement.
+- **PR Validation:** `.github/workflows/pr-validation.yml` runs build/tests/coverage on every PR (forks included) so branch protection checks pass.
+- **Release:** `.github/workflows/release.yml` tags `main` as `vX.Y.Z` using the `VERSION` file and drafts GitHub Releases with generated notes.
+- **CI (legacy compatibility):** `.github/workflows/ci.yml` executes the same build/tests when the validation workflow finishes for `main`.
 - Future work includes automating Docker image publishing (see roadmap).
 - Dev container installs OpenAI Codex CLI, GitKraken CLI, and sets up MCP servers; manual usage is described in `AGENTS.md`.
 
 ## Release Checklist
 1. Ensure backlog items for the release are in `/plan/backlog/done/` with status `Completed`.
 2. Run full test suite with coverage and (optionally) Testcontainers integration tests.
-3. Build/push Docker image:
+3. Build/push Docker image (until automation in PIDP-017):
    ```bash
    docker buildx build --platform linux/amd64 -t ghcr.io/thomaslazar/pihole-dnspropagate:<tag> --push .
    ```
 4. Update changelog / release notes with notable changes.
-5. Tag the commit and draft a GitHub release referencing the Docker image.
+5. Merging into `main` will trigger `.github/workflows/release.yml` to tag the commit and draft a GitHub release; update release notes with any manual artifacts (e.g., Docker image digests).
 
 Happy hacking! If you run into issues, open an issue or ping the maintainers.
