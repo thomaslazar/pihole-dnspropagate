@@ -62,6 +62,7 @@ gitGraph
 - `develop` is the integration branch. Start feature and bugfix branches from here; use prefixes `feature/` or `bugfix/` with the related PIDP identifier when possible.
 - Hotfix branches fork from `main`, are reviewed, then merged to both `main` and `develop`.
 - Contributors working from forks should keep their fork in sync (`git fetch upstream && git rebase upstream/develop`), branch from `develop`, and open PRs back to `develop` unless maintainers request a hotfix. Run `dotnet test` (and any relevant integration suites) before marking a PR ready.
+- `main` enforces branch protection: PRs must pass the `build` workflow and receive at least one maintainer approval; `develop` requires the same `build` check. Coordinate with maintainers if settings need adjustments.
 
 ## Integration Testing Workflow
 - Follow `docs/pihole-sandbox.md` when bringing up the primary/secondary Pi-hole sandbox.
