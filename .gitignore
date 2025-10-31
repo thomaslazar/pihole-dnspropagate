@@ -629,3 +629,4 @@ $RECYCLE.BIN/
 # Codex CLI
 .codex/*
 !.codex/config.toml
+!.codex/committer.env

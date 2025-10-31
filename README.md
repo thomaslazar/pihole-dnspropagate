@@ -3,6 +3,8 @@
 
 **Synchronize Pi-hole local DNS and CNAME records across multiple Pi-hole instances — nothing more, nothing less.**
 
+> Latest release: [v1.0.0](https://github.com/thomaslazar/pihole-dnspropagate/releases/tag/v1.0.0) (2025-10-31)
+
 ---
 
 ## 🧠 Overview
