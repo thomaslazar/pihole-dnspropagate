@@ -16,7 +16,7 @@ Existing sync tools (like *Nebula Sync*) replicate entire Pi-hole configurations
 - 🔄 **Automatic propagation** of local DNS and CNAME records between Pi-holes.  
 - 🧭 **Source-defined sync** – choose one “primary” Pi-hole as the authoritative source.  
 - 🕒 **Periodic updates** – scheduler supports fixed intervals or cron expressions.  
-- ♻️ **Diff-aware sync** – secondaries are updated only when DNS/CNAME changes are detected.  
+- ♻️ **Change-aware sync** – secondaries are updated only when DNS/CNAME changes are detected.  
 - 🔧 **Manual sync CLI** – trigger `sync-now` from the container without waiting for the scheduler.  
 - 🧰 **API-based updates** – no file-level or full-config syncing required.  
 - 📈 **Health endpoint** – JSON status exposed on `/healthz` for readiness checks.  
@@ -28,7 +28,7 @@ Existing sync tools (like *Nebula Sync*) replicate entire Pi-hole configurations
 1. The container periodically queries the *primary* Pi-hole instance using its API key.  
 2. It fetches all local DNS and CNAME records.  
 3. It compares them to each target Pi-hole instance.  
-4. Any missing or outdated records are added or updated remotely through the Pi-hole API.  
+4. When changes are detected, the service downloads each secondary’s Teleporter archive, augments it with the primary records, and uploads the updated archive back via the Pi-hole API.
 
 This ensures your network stays consistent even if you manage several Pi-holes in different locations or VLANs.
 
@@ -84,7 +84,7 @@ The full list of configuration options and compose templates lives in [`docs/con
 - ✅ Scheduler + manual CLI + health endpoint  
 - ✅ Session teardown after each sync (PIDP-011)  
 - 🔄 Smarter backoff for Pi-hole rate limits  
-- 🗂️ Diff-based sync to minimize uploads  
+- 🗂️ Incremental diff-based sync (future)  
 - 🚀 CI image publishing to GHCR  
 
 ---
