@@ -1,21 +1,19 @@
 # Backlog Item Template
 
 ## Naming Convention
-File names must follow `PIDP-{NNN}-phase-{P}-{kebab-summary}.md`, where:
+File names must follow `PIDP-{NNN}-{kebab-summary}.md`, where:
 - `{NNN}` is a zero-padded sequence number in backlog order (e.g., `001`, `014`).
-- `{P}` matches the implementation phase (0–7).
 - `{kebab-summary}` is a concise kebab-case description (≤ six words).
 
 Number items sequentially as they are added so dependency chains remain clear.
 
-Example: `PIDP-002-phase-1-validate-config-inputs.md`
+Example: `PIDP-002-validate-config-inputs.md`
 
 ## Front Matter
 Each backlog file starts with:
 ```
 # {Title}
 - Type: Story | Task
-- Phase: {0-7}
 - Prerequisites: None | PIDP-00X, PIDP-00Y
 - Status: Planned
 
