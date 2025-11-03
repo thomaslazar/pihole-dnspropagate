@@ -7,9 +7,9 @@ This document captures the environment variables, container images, and compose 
 | Variable | Required | Description | Example |
 | --- | --- | --- | --- |
 | `PRIMARY_PIHOLE_URL` | Yes | Base URL for the authoritative Pi-hole instance that owns the DNS/CNAME records. | `http://pihole-primary.local` |
-| `PRIMARY_PIHOLE_PASSWORD` | Yes | Pi-hole web password or application password for the primary instance. Plaintext is expected; Pi-hole handles hashing. | `changeme` |
+| `PRIMARY_PIHOLE_PASSWORD` | Yes | Pi-hole web password or application password for the primary instance. Plaintext is expected; Pi-hole handles hashing. | `<set-primary-password>` |
 | `SECONDARY_PIHOLE_URLS` | Yes | Comma-separated list of secondary Pi-hole base URLs that should receive the synchronized records. | `http://pihole-secondary-1.local,http://pihole-secondary-2.local` |
-| `SECONDARY_PIHOLE_PASSWORDS` | Yes | Passwords for the secondary instances, comma separated, aligned with the `SECONDARY_PIHOLE_URLS` order. | `changeme,changeme` |
+| `SECONDARY_PIHOLE_PASSWORDS` | Yes | Passwords for the secondary instances, comma separated, aligned with the `SECONDARY_PIHOLE_URLS` order. | `<set-secondary-password>,<set-secondary-password>` |
 | `SECONDARY_PIHOLE_NAMES` | No | Optional friendly names for each secondary (used in logs and reporting). | `secondary-1,secondary-2` |
 | `SYNC_INTERVAL` | No | Fallback interval between sync cycles when no cron is supplied. Defaults to 5 minutes. | `00:05:00` |
 | `SYNC_CRON` | No | Cron expression controlling sync cadence. Takes precedence over `SYNC_INTERVAL` when set. | `*/10 * * * *` |
@@ -19,7 +19,7 @@ This document captures the environment variables, container images, and compose 
 | `HEALTH_PORT` | No | Port exposed by the in-process health endpoint. | `8080` |
 
 > **Note**
-> Pi-hole’s HTTP API expects plaintext credentials. If you run Pi-hole via Docker and want to change the admin password, use `docker exec <container> pihole -a -p` or follow the [Pi-hole docs](https://docs.pi-hole.net/core/pihole-command/#pihole-a) to generate the required hash for Pi-hole’s own `WEBPASSWORD`. The environment variables consumed by **pihole-dnspropagate** should remain plaintext so the API can authenticate correctly.
+> Pi-hole’s HTTP API expects plaintext credentials. Provide them via environment variables or orchestrator secrets and avoid logging the values. See [`docs/security.md`](security.md) for detailed guidance.
 
 A ready-to-edit `.env.dev` template lives at the repository root. Duplicate or adapt it for production deployments and keep the secret values outside of source control.
 
@@ -52,7 +52,7 @@ For publishing, tag the image appropriately (e.g., `ghcr.io/<org>/pihole-dnsprop
 Two compose templates live under `deploy/compose/`:
 
 - `docker-compose.dev.yaml` builds the image from source and is suited for local iteration.
-- `docker-compose.prod.yaml` assumes an image already exists in a registry and expects the `pihole-sync` network to be created ahead of time (`docker network create pihole-sync`).
+- `docker-compose.prod.yaml` assumes an image already exists in a registry and defines the `pihole-sync` network locally (you can still attach to an external network if desired).
 
 Start the development stack from the repository root:
 
