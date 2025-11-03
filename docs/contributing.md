@@ -175,8 +175,8 @@ gitGraph
 - Branch protection requires at least one maintainer approval on `main` before merge; expect review feedback.
 
 ## Git & Backlog Workflow
-- Backlog items live under `plan/backlog/` using the template `template.md`.
-- Completed items move to `plan/backlog/done/` with status set to `Completed`.
+- Backlog items are tracked on the GitHub Project board: <https://github.com/users/thomaslazar/projects/1>. Create entries titled `PIDP-### – summary` and paste the Markdown scaffold from `plan/backlog/template.md` into the body (Context, Work Items, Acceptance Criteria, Notes).
+- Move project items through the workflow columns (Backlog → Ready → In progress → In review → Done) and update checkboxes as tasks are completed.
 - Commits follow `type(scope): summary` per repo guidelines (documented in AGENTS.md/README).
 - Avoid committing without explicit user instruction (per AGENTS.md).
 - Large features should reference backlog IDs in commit messages or PR descriptions.
@@ -193,7 +193,7 @@ gitGraph
 - Review the [security guidance](security.md) before modifying authentication or logging code.
 
 ## Release Checklist
-1. Ensure backlog items for the release are in `/plan/backlog/done/` with status `Completed`.
+1. Ensure backlog items for the release are marked `Done` on the GitHub Project board.
 2. Run full test suite with coverage and (optionally) Testcontainers integration tests.
 3. Build/push Docker image (until automation in PIDP-017):
    ```bash
