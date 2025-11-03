@@ -189,7 +189,7 @@ gitGraph
 
 ## Credential Handling
 - Pi-hole’s API requires plaintext passwords. Supply them via environment variables, Docker/Kubernetes secrets, or secret managers—never commit real credentials.
-- `.env.dev` contains placeholders only. Override with local secrets when testing.
+- `.env.dev` only supplies **placeholder** values (e.g., `<set-primary-password>`). Copy it and replace the placeholders locally before running the service.
 - Review the [security guidance](security.md) before modifying authentication or logging code.
 
 ## Release Checklist

@@ -7,9 +7,9 @@ This document captures the environment variables, container images, and compose 
 | Variable | Required | Description | Example |
 | --- | --- | --- | --- |
 | `PRIMARY_PIHOLE_URL` | Yes | Base URL for the authoritative Pi-hole instance that owns the DNS/CNAME records. | `http://pihole-primary.local` |
-| `PRIMARY_PIHOLE_PASSWORD` | Yes | Pi-hole web password or application password for the primary instance. Plaintext is expected; Pi-hole handles hashing. | `changeme` |
+| `PRIMARY_PIHOLE_PASSWORD` | Yes | Pi-hole web password or application password for the primary instance. Plaintext is expected; Pi-hole handles hashing. | `<set-primary-password>` |
 | `SECONDARY_PIHOLE_URLS` | Yes | Comma-separated list of secondary Pi-hole base URLs that should receive the synchronized records. | `http://pihole-secondary-1.local,http://pihole-secondary-2.local` |
-| `SECONDARY_PIHOLE_PASSWORDS` | Yes | Passwords for the secondary instances, comma separated, aligned with the `SECONDARY_PIHOLE_URLS` order. | `changeme,changeme` |
+| `SECONDARY_PIHOLE_PASSWORDS` | Yes | Passwords for the secondary instances, comma separated, aligned with the `SECONDARY_PIHOLE_URLS` order. | `<set-secondary-password>,<set-secondary-password>` |
 | `SECONDARY_PIHOLE_NAMES` | No | Optional friendly names for each secondary (used in logs and reporting). | `secondary-1,secondary-2` |
 | `SYNC_INTERVAL` | No | Fallback interval between sync cycles when no cron is supplied. Defaults to 5 minutes. | `00:05:00` |
 | `SYNC_CRON` | No | Cron expression controlling sync cadence. Takes precedence over `SYNC_INTERVAL` when set. | `*/10 * * * *` |
