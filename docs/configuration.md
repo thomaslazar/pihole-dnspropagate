@@ -52,7 +52,7 @@ For publishing, tag the image appropriately (e.g., `ghcr.io/<org>/pihole-dnsprop
 Two compose templates live under `deploy/compose/`:
 
 - `docker-compose.dev.yaml` builds the image from source and is suited for local iteration.
-- `docker-compose.prod.yaml` assumes an image already exists in a registry and expects the `pihole-sync` network to be created ahead of time (`docker network create pihole-sync`).
+- `docker-compose.prod.yaml` assumes an image already exists in a registry and defines the `pihole-sync` network locally (you can still attach to an external network if desired).
 
 Start the development stack from the repository root:
 
