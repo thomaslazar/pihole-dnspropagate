@@ -187,6 +187,11 @@ gitGraph
 - **Manual Image Build:** `.github/workflows/manual-image-build.yml` publishes release-candidate or ad-hoc tags without updating `latest`.
 - Dev container installs OpenAI Codex CLI, GitKraken CLI, and sets up MCP servers; manual usage is described in `AGENTS.md`.
 
+## Credential Handling
+- Pi-hole’s API requires plaintext passwords. Supply them via environment variables, Docker/Kubernetes secrets, or secret managers—never commit real credentials.
+- `.env.dev` contains placeholders only. Override with local secrets when testing.
+- Review the [security guidance](security.md) before modifying authentication or logging code.
+
 ## Release Checklist
 1. Ensure backlog items for the release are in `/plan/backlog/done/` with status `Completed`.
 2. Run full test suite with coverage and (optionally) Testcontainers integration tests.

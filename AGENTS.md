@@ -75,6 +75,7 @@ gitGraph
   ```
 - Avoid `git commit -m`. Instead, write commit messages to a file (or use `git commit -F`) so backticks or Markdown aren’t mangled. After each commit, run `git log -1 --pretty=medium`; if the `Changes:`/`Validation:` sections look off, amend immediately.
 - Before staging, ensure backlog tasks have their work items / acceptance criteria checked and the file moved to `/plan/backlog/done/` when completed.
+- When working with Pi-hole credentials, review `docs/security.md` for guidance—never log passwords and prefer env vars or secret managers.
 
 ## Integration Testing Workflow
 - Follow `docs/pihole-sandbox.md` when bringing up the primary/secondary Pi-hole sandbox.

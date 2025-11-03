@@ -19,7 +19,7 @@ This document captures the environment variables, container images, and compose 
 | `HEALTH_PORT` | No | Port exposed by the in-process health endpoint. | `8080` |
 
 > **Note**
-> Pi-hole’s HTTP API expects plaintext credentials. If you run Pi-hole via Docker and want to change the admin password, use `docker exec <container> pihole -a -p` or follow the [Pi-hole docs](https://docs.pi-hole.net/core/pihole-command/#pihole-a) to generate the required hash for Pi-hole’s own `WEBPASSWORD`. The environment variables consumed by **pihole-dnspropagate** should remain plaintext so the API can authenticate correctly.
+> Pi-hole’s HTTP API expects plaintext credentials. Provide them via environment variables or orchestrator secrets and avoid logging the values. See [`docs/security.md`](security.md) for detailed guidance.
 
 A ready-to-edit `.env.dev` template lives at the repository root. Duplicate or adapt it for production deployments and keep the secret values outside of source control.
 
