@@ -64,8 +64,7 @@ flowchart LR
 3. Open a PR from the release branch (or `develop`) into `main`. CI must pass and at least one maintainer must approve.
 4. After merge, tag the release commit as `vX.Y.Z` and trigger packaging workflows (container publish, etc.).
 5. Draft GitHub Release notes summarising changes, linking backlog items, and including artifact references.
-6. Update `CHANGELOG.md` (or equivalent documentation) with the release summary.
-7. If a hotfix originated from `main`, merge the release branch back into `develop` to keep histories aligned.
+6. If a hotfix originated from `main`, merge the release branch back into `develop` to keep histories aligned.
 
 GitHub Actions automation:
 - The `PR Validation` workflow runs on every PR to `develop` or `main`, ensuring build/test coverage before merge.

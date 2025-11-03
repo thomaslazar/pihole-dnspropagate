@@ -74,7 +74,8 @@ gitGraph
   git config user.email "$GIT_AUTHOR_EMAIL"
   ```
 - Avoid `git commit -m`. Instead, write commit messages to a file (or use `git commit -F`) so backticks or Markdown aren’t mangled. After each commit, run `git log -1 --pretty=medium`; if the `Changes:`/`Validation:` sections look off, amend immediately.
-- Before staging, ensure backlog tasks have their work items / acceptance criteria checked and the file moved to `/plan/backlog/done/` when completed.
+- Before staging, ensure the linked backlog item on the GitHub Project board has its work items / acceptance criteria checked off and its status set to `Done` once the change is ready.
+- When working with Pi-hole credentials, review `docs/security.md` for guidance—never log passwords and prefer env vars or secret managers.
 
 ## Integration Testing Workflow
 - Follow `docs/pihole-sandbox.md` when bringing up the primary/secondary Pi-hole sandbox.
@@ -89,7 +90,7 @@ Write commits using the template `type(scope): summary`, followed by `Changes:` 
 - Do not run `git commit` (or any history-modifying command) unless the user explicitly asks for a commit. Stage your changes, summarize them, and wait for approval before committing.
 
 ## Backlog Item Standards
-Create backlog entries in `/plan/backlog/` using the template defined in `plan/backlog/template.md`. File names must follow `PIDP-{NNN}-phase-{P}-{kebab-summary}.md` with zero-padded global sequence numbers. Each file must declare prerequisites (if any) in the header, ensuring dependencies are explicit. Populate sections (Context, Work Items, Acceptance Criteria, Notes) exactly as outlined in the template and keep `Status: Planned` until completion. When an item is done, update its status to `Completed` and move the file into `/plan/backlog/done/`.
+Manage the backlog exclusively through the GitHub Project board at `https://github.com/users/thomaslazar/projects/1`. Create draft items titled `PIDP-### – summary`, and use the Markdown scaffold from `plan/backlog/template.md` for the body so every item contains Context, Work Items, Acceptance Criteria, Notes, and explicit Prerequisites. Track progress by moving items across the project’s workflow columns (Backlog → Ready → In progress → In review → Done). Update checkboxes as you complete work and move the item to `Done` once the acceptance criteria are satisfied.
 
 ## Security & Configuration Tips
 Never commit real Pi-hole API keys; provide masked examples in `.env.example`. When introducing new configuration, document defaults in `docs/configuration.md` and ensure the Docker image reads settings via environment variables only.

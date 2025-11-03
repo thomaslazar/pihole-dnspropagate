@@ -1,14 +1,28 @@
 # Changelog
 
-## v1.0.0 - 2025-10-31
-### Key Features
-- **Environment & Tooling** – Devcontainer, solution scaffold, test infrastructure, and contributor guidance (PIDP-001 – PIDP-009, PIDP-021).
-- **Teleporter Synchronisation** – Primary/secondary Pi-hole client with session management, diff-aware updates, and sandbox support (PIDP-004 – PIDP-012, PIDP-017, PIDP-019).
-- **Scheduling & Operations** – Cron-style scheduler, manual CLI, health endpoint, and sync state tracking (PIDP-006 – PIDP-008, PIDP-015).
-- **Release Automation** – Version source of truth, PR validation workflow, release tagging, GHCR publishing, and backlog-driven documentation (PIDP-013 – PIDP-018, PIDP-020).
+All notable changes to this project are documented in this file. The format roughly follows [Keep a Changelog](https://keepachangelog.com/) and adheres to [Semantic Versioning](https://semver.org/).
 
-### Backlog Coverage
-- All planned backlog items PIDP-001 through PIDP-021 are delivered in this release.
+## [1.0.1] - 2025-11-03
+### Added
+- Documented the GitHub Project-based backlog workflow in `AGENTS.md` and `docs/contributing.md`.
+- Installed the GitHub CLI in the devcontainer to streamline project automation workflows.
 
-### Notes
-- See the published [v1.0.0 release](https://github.com/thomaslazar/pihole-dnspropagate/releases/tag/v1.0.0) for generated notes and container image digests once it is published.
+### Changed
+- Clarified README and configuration guidance around change-aware synchronization and credential handling.
+- Replaced sample environment passwords with placeholders and refreshed agent operations guidance.
+
+### Fixed
+- Updated Microsoft.Extensions.* options and Serilog logging packages to their latest compatible versions.
+- Bumped Microsoft.NET.Test.Sdk and Coverlet packages to keep CI and coverage tooling current.
+- Adopted the latest GitHub Actions runners and Docker build action releases via Dependabot.
+
+### Testing
+- `dotnet build`
+- `dotnet test --configuration Release --no-build /p:CollectCoverage=true /p:CoverletOutput=TestResults/coverage/ /p:CoverletOutputFormat=cobertura%2copencover /p:Threshold=80 /p:ThresholdType=line /p:ThresholdStat=total`
+
+## [1.0.0] - 2025-10-31
+### Added
+- Initial release of the Pi-hole DNS propagate worker with Teleporter client, archive processing pipeline, sync coordinator, scheduler, manual CLI trigger, and health endpoint.
+- Testcontainers-based integration scaffolding and Pi-hole sandbox automation.
+- Packaging assets (Dockerfile, compose samples) and release automation for GHCR + GitHub Releases.
+

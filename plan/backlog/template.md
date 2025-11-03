@@ -1,42 +1,30 @@
 # Backlog Item Template
 
-## Naming Convention
-File names must follow `PIDP-{NNN}-phase-{P}-{kebab-summary}.md`, where:
-- `{NNN}` is a zero-padded sequence number in backlog order (e.g., `001`, `014`).
-- `{P}` matches the implementation phase (0–7).
-- `{kebab-summary}` is a concise kebab-case description (≤ six words).
+Use this Markdown scaffold when creating or updating items on the GitHub Project board (`https://github.com/users/thomaslazar/projects/1`). Copy the snippet into the item body and replace placeholders as needed.
 
-Number items sequentially as they are added so dependency chains remain clear.
+## Title & Status
+- Title format: `PIDP-### – concise summary` (e.g., `PIDP-026 – harden sandbox auth`).
+- Treat the project columns as the lifecycle: Backlog → Ready → In progress → In review → Done.
+- Keep the checkbox lists in sync with execution; mark them complete before moving the item to `Done`.
 
-Example: `PIDP-002-phase-1-validate-config-inputs.md`
-
-## Front Matter
-Each backlog file starts with:
-```
-# {Title}
+## Markdown Scaffold
+````markdown
+# {Human-readable title}
 - Type: Story | Task
-- Phase: {0-7}
 - Prerequisites: None | PIDP-00X, PIDP-00Y
-- Status: Planned
+- Status: Planned | In Progress | Completed
 
-Use the `Prerequisites` field to list backlog IDs that must be completed before this item begins.
-```
-
-## Body Sections
-```
 ## Context
 Explain rationale, constraints, and dependencies.
 
 ## Work Items
-- [ ] Bullet checklist detailing steps.
+- [ ] Checklist of discrete implementation steps.
 
 ## Acceptance Criteria
-- [ ] Testable outcomes required to mark complete.
+- [ ] Measurable outcomes required for completion.
 
 ## Notes
-Optional additional references or follow-ups.
-```
+Optional references, follow-ups, or links.
+````
 
-## Lifecycle
-- Active items live under `/plan/backlog/`.
-- Completed items move to `/plan/backlog/done/` with status updated to `Completed`.
+> Tip: record prerequisite items inline so contributors know sequencing dependencies. Update the `Status` line to mirror the project column when the item progresses.
